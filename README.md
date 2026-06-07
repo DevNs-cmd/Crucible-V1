@@ -930,6 +930,3 @@ chore: upgrade Supabase client to v2.x
 | API Docs (OpenAPI) | http://localhost:4000/api/docs |
 
 ---
-
-*AlgoForce AI — Dev Team · Week 1 Sprint · Built with Node.js, React, Supabase, Claude API & n8n*#   C r u c i b l e - V 1  
- 
