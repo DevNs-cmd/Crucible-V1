@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 
 const METRIC_CARDS = [
@@ -159,6 +160,18 @@ export default function DashboardPage() {
           <span className="text-sm font-semibold text-slate-800">Dev Operations</span>
         </div>
         <div className="flex items-center gap-4">
+          <Link
+            href="/crm"
+            className="text-xs font-semibold text-slate-500 transition-colors hover:text-amber-600"
+          >
+            CRM
+          </Link>
+          <Link
+            href="/proposals"
+            className="text-xs font-semibold text-slate-500 transition-colors hover:text-amber-600"
+          >
+            Proposals
+          </Link>
           <span className="text-xs text-slate-400">Week 1 Sprint</span>
           <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-xs font-semibold px-3 py-1 rounded-full border border-emerald-200">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />

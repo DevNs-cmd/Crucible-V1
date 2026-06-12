@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 type Priority = "High" | "Medium" | "Low";
@@ -200,15 +201,29 @@ export default function CRMPage() {
           <span className="text-slate-200 text-lg font-thin">/</span>
           <span className="text-sm font-semibold text-slate-800">CRM Pipeline</span>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-bold px-4 py-2 rounded-xl transition-colors shadow-sm shadow-amber-200"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-4 h-4">
-            <path d="M12 5v14M5 12h14" strokeLinecap="round" />
-          </svg>
-          Add Custom Lead
-        </button>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/dashboard"
+            className="text-xs font-semibold text-slate-500 transition-colors hover:text-amber-600"
+          >
+            Dashboard
+          </Link>
+          <Link
+            href="/proposals"
+            className="text-xs font-semibold text-slate-500 transition-colors hover:text-amber-600"
+          >
+            Proposals
+          </Link>
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-bold px-4 py-2 rounded-xl transition-colors shadow-sm shadow-amber-200"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-4 h-4">
+              <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+            </svg>
+            Add Custom Lead
+          </button>
+        </div>
       </header>
 
       <main className="max-w-[1400px] mx-auto px-6 py-8 space-y-7">
