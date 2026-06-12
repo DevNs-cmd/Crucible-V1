@@ -20,15 +20,15 @@ interface Lead {
 const STAGES: Stage[] = ["Discovery", "Contacted", "Proposal Sent", "Closed / Won"];
 
 const INITIAL_LEADS: Lead[] = [
-  { id: 1, company: "Nexara Capital", contact: "Priya Mehta", value: 420000, priority: "High", stage: "Discovery", tag: "FinTech", daysInStage: 2, avatar: "NC" },
-  { id: 2, company: "Lumen Health", contact: "James O'Brien", value: 185000, priority: "Medium", stage: "Discovery", tag: "HealthTech", daysInStage: 5, avatar: "LH" },
-  { id: 3, company: "Orbis Logistics", contact: "Aisha Tanaka", value: 310000, priority: "High", stage: "Contacted", tag: "Logistics", daysInStage: 3, avatar: "OL" },
-  { id: 4, company: "Drift Analytics", contact: "Carlos Vega", value: 95000, priority: "Low", stage: "Contacted", tag: "SaaS", daysInStage: 8, avatar: "DA" },
-  { id: 5, company: "Fortis Media", contact: "Sophie Laurent", value: 240000, priority: "High", stage: "Contacted", tag: "Media", daysInStage: 1, avatar: "FM" },
-  { id: 6, company: "Stratum RE", contact: "Rohan Kapoor", value: 560000, priority: "High", stage: "Proposal Sent", tag: "Real Estate", daysInStage: 4, avatar: "SR" },
-  { id: 7, company: "Kinetic EdTech", contact: "Maya Chen", value: 78000, priority: "Medium", stage: "Proposal Sent", tag: "EdTech", daysInStage: 6, avatar: "KE" },
-  { id: 8, company: "Solaris Energy", contact: "Finn Hartmann", value: 890000, priority: "High", stage: "Closed / Won", tag: "CleanEnergy", daysInStage: 0, avatar: "SE" },
-  { id: 9, company: "Vantage CPG", contact: "Lena Müller", value: 130000, priority: "Medium", stage: "Closed / Won", tag: "FMCG", daysInStage: 0, avatar: "VC" },
+  { id: 1, company: "Nirvana Capital", contact: "Priya Mehta", value: 3500000, priority: "High", stage: "Discovery", tag: "FinTech", daysInStage: 2, avatar: "NC" },
+  { id: 2, company: "Arogya Health", contact: "Rajesh Iyer", value: 1550000, priority: "Medium", stage: "Discovery", tag: "HealthTech", daysInStage: 5, avatar: "AH" },
+  { id: 3, company: "Vahanam Logistics", contact: "Ananya Reddy", value: 2600000, priority: "High", stage: "Contacted", tag: "Logistics", daysInStage: 3, avatar: "VL" },
+  { id: 4, company: "Drishti Analytics", contact: "Karthik Subramaniam", value: 800000, priority: "Low", stage: "Contacted", tag: "SaaS", daysInStage: 8, avatar: "DA" },
+  { id: 5, company: "Sankalp Media", contact: "Neha Joshi", value: 2000000, priority: "High", stage: "Contacted", tag: "Media", daysInStage: 1, avatar: "SM" },
+  { id: 6, company: "Bhoomi Realty", contact: "Rohan Kapoor", value: 4700000, priority: "High", stage: "Proposal Sent", tag: "Real Estate", daysInStage: 4, avatar: "BR" },
+  { id: 7, company: "Vidya EdTech", contact: "Maya Krishnan", value: 650000, priority: "Medium", stage: "Proposal Sent", tag: "EdTech", daysInStage: 6, avatar: "VE" },
+  { id: 8, company: "Surya Energy", contact: "Aditya Verma", value: 7400000, priority: "High", stage: "Closed / Won", tag: "CleanEnergy", daysInStage: 0, avatar: "SE" },
+  { id: 9, company: "Sahyog Consumer Goods", contact: "Lakshmi Nair", value: 1100000, priority: "Medium", stage: "Closed / Won", tag: "FMCG", daysInStage: 0, avatar: "SC" },
 ];
 
 const PRIORITY_CONFIG: Record<Priority, { label: string; cls: string }> = {
@@ -45,7 +45,7 @@ const STAGE_CONFIG: Record<Stage, { dot: string; header: string }> = {
 };
 
 function fmt(n: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
+  return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
 }
 
 interface AddLeadModalProps {
@@ -87,10 +87,10 @@ function AddLeadModal({ onClose, onAdd }: AddLeadModalProps) {
         </div>
         <div className="px-7 py-5 space-y-4">
           {[
-            { k: "company", label: "Company Name", placeholder: "e.g. Nexara Capital" },
+            { k: "company", label: "Company Name", placeholder: "e.g. Nirvana Capital" },
             { k: "contact", label: "Contact Person", placeholder: "e.g. Priya Mehta" },
             { k: "tag", label: "Industry Tag", placeholder: "e.g. FinTech, SaaS" },
-            { k: "value", label: "Deal Value (USD)", placeholder: "e.g. 250000", type: "number" },
+            { k: "value", label: "Deal Value (INR)", placeholder: "e.g. 2500000", type: "number" },
           ].map(({ k, label, placeholder, type }) => (
             <div key={k}>
               <label className="block text-xs font-semibold text-slate-600 mb-1">{label}</label>
