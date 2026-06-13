@@ -13,7 +13,7 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
   JWT_EXPIRES_IN: z.string().default('7d'),
 
-  ANTHROPIC_API_KEY: z.string().startsWith('sk-ant-', { message: 'ANTHROPIC_API_KEY must start with sk-ant-' }),
+  GROQ_API_KEY: z.string().startsWith('gsk_', { message: 'GROQ_API_KEY must start with gsk_' }),
 
   N8N_WEBHOOK_NEW_LEAD: z.string().url({ message: 'N8N_WEBHOOK_NEW_LEAD must be a valid URL' }),
   N8N_WEBHOOK_STATUS_CHANGE: z.string().url({ message: 'N8N_WEBHOOK_STATUS_CHANGE must be a valid URL' }),
