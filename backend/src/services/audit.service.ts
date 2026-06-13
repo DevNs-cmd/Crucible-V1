@@ -1,10 +1,10 @@
-import { anthropic, CLAUDE_MODEL } from '../config/ai';
+import { groq, GROQ_MODEL } from '../config/ai';
 import { supabase } from '../config/database';
 import { AUDIT_SYSTEM_PROMPT, buildAuditUserPrompt } from '../prompts/audit.prompt';
 import { GenerateAuditInput, AuditReport, AuditReportSchema } from '../utils/validators';
 
 /**
- * Generate an AI business audit report using Claude.
+ * Generate an AI business audit report using Groq (Llama 3.3 70B).
  * Validates the response against the expected schema before returning.
  */
 export async function generateAuditReport(
@@ -16,35 +16,37 @@ export async function generateAuditReport(
   let rawText: string;
 
   try {
-    const message = await anthropic.messages.create({
-      model: CLAUDE_MODEL,
+    const completion = await groq.chat.completions.create({
+      model: GROQ_MODEL,
       max_tokens: 2000,
-      system: AUDIT_SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: userPrompt }],
+      temperature: 0.7,
+      messages: [
+        { role: 'system', content: AUDIT_SYSTEM_PROMPT },
+        { role: 'user', content: userPrompt },
+      ],
     });
 
-    const firstBlock = message.content[0];
-    if (!firstBlock || firstBlock.type !== 'text') {
-      throw new Error('Claude returned an unexpected response format');
+    const choice = completion.choices[0];
+    if (!choice || !choice.message.content) {
+      throw new Error('Groq returned an empty response');
     }
 
-    rawText = firstBlock.text;
+    rawText = choice.message.content;
   } catch (err) {
     const error = err as Error & { status?: number };
 
-    // Surface specific API error types for better debugging
     if (error.status === 429) {
       throw Object.assign(new Error('AI rate limit reached. Please try again shortly.'), {
         status: 429,
       });
     }
-    if (error.status === 529) {
-      throw Object.assign(new Error('AI service is temporarily overloaded. Please try again.'), {
+    if (error.status === 503) {
+      throw Object.assign(new Error('AI service is temporarily unavailable. Please try again.'), {
         status: 503,
       });
     }
 
-    console.error('[AuditService] Claude API error:', err);
+    console.error('[AuditService] Groq API error:', err);
     throw Object.assign(new Error('Failed to generate audit report. Please try again.'), {
       status: 502,
     });
