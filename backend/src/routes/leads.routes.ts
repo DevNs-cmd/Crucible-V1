@@ -3,7 +3,6 @@ import * as LeadsController from '../controllers/leads.controller';
 import { authenticate } from '../middleware/auth';
 
 const router = Router();
-
 router.use(authenticate);
 
 router.get('/', LeadsController.getLeads);

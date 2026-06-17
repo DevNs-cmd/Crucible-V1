@@ -1,4 +1,7 @@
-/** Valid lead status values. */
+import { Note } from './note.model';
+import { Meeting } from './meeting.model';
+import { FollowUp } from './followup.model';
+
 export type LeadStatus =
   | 'new'
   | 'contacted'
@@ -7,13 +10,12 @@ export type LeadStatus =
   | 'closed_won'
   | 'closed_lost';
 
-/** Represents a row in the `leads` table. */
 export interface Lead {
   id: string;
   full_name: string;
-  email: string;
+  email: string | null;
   phone: string | null;
-  company: string;
+  company: string | null;
   industry: string | null;
   status: LeadStatus;
   source: string | null;
@@ -24,9 +26,8 @@ export interface Lead {
   updated_at: string;
 }
 
-/** Lead with related records joined. */
 export interface LeadWithRelations extends Lead {
-  notes?: import('./note.model').Note[];
-  meetings?: import('./meeting.model').Meeting[];
-  followups?: import('./followup.model').FollowUp[];
+  notes?: Note[];
+  meetings?: Meeting[];
+  followups?: FollowUp[];
 }

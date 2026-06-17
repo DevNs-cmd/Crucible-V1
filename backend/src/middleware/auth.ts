@@ -7,9 +7,9 @@ export interface JwtPayload {
   userId: string;
   email: string;
   role: string;
+  type: 'access' | 'refresh';
 }
 
-// Extend Express Request to carry the authenticated user
 declare global {
   namespace Express {
     interface Request {
@@ -19,8 +19,8 @@ declare global {
 }
 
 /**
- * Middleware that verifies the Bearer JWT token from the Authorization header.
- * Attaches the decoded payload to `req.user` on success.
+ * Verifies Bearer JWT from Authorization header.
+ * Attaches decoded payload to req.user on success.
  */
 export function authenticate(req: Request, res: Response, next: NextFunction): void {
   const authHeader = req.headers['authorization'];
@@ -31,7 +31,6 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
   }
 
   const token = authHeader.split(' ')[1];
-
   if (!token) {
     sendError(res, 'Token not provided', 401);
     return;
@@ -39,6 +38,10 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
 
   try {
     const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
+    if (decoded.type !== 'access') {
+      sendError(res, 'Invalid token type', 401);
+      return;
+    }
     req.user = decoded;
     next();
   } catch (err) {
@@ -51,8 +54,7 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
 }
 
 /**
- * Middleware factory that restricts access to specific roles.
- * Must be used after `authenticate`.
+ * Restricts access to specific roles. Must be used after authenticate.
  */
 export function requireRole(...roles: string[]) {
   return (req: Request, res: Response, next: NextFunction): void => {

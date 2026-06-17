@@ -2,9 +2,7 @@ import { supabase } from '../config/database';
 import { FollowUp } from '../models/followup.model';
 import { CreateFollowUpInput } from '../utils/validators';
 
-/**
- * Fetch all follow-ups for a given lead, ordered by due date ascending.
- */
+/** All follow-ups for a lead, ordered by due date. */
 export async function getFollowUpsByLeadId(leadId: string): Promise<FollowUp[]> {
   const { data, error } = await supabase
     .from('followups')
@@ -12,16 +10,11 @@ export async function getFollowUpsByLeadId(leadId: string): Promise<FollowUp[]> 
     .eq('lead_id', leadId)
     .order('due_at', { ascending: true });
 
-  if (error) {
-    throw Object.assign(new Error(error.message), { status: 500 });
-  }
-
+  if (error) throw Object.assign(new Error(error.message), { status: 500 });
   return (data as FollowUp[]) ?? [];
 }
 
-/**
- * Create a new follow-up for a lead.
- */
+/** Create a follow-up task for a lead. */
 export async function createFollowUp(
   leadId: string,
   userId: string,
@@ -39,64 +32,42 @@ export async function createFollowUp(
     .select()
     .single();
 
-  if (error) {
-    throw Object.assign(new Error(error.message), { status: 400 });
-  }
-
+  if (error) throw Object.assign(new Error(error.message), { status: 400 });
   return data as FollowUp;
 }
 
-/**
- * Mark a follow-up as completed.
- */
+/** Mark a follow-up as completed. */
 export async function completeFollowUp(leadId: string, followUpId: string): Promise<FollowUp> {
   const { data, error } = await supabase
     .from('followups')
-    .update({
-      completed: true,
-      completed_at: new Date().toISOString(),
-    })
+    .update({ completed: true, completed_at: new Date().toISOString() })
     .eq('id', followUpId)
     .eq('lead_id', leadId)
     .select()
     .single();
 
-  if (error || !data) {
-    throw Object.assign(new Error('Follow-up not found or update failed'), { status: 404 });
-  }
-
+  if (error || !data) throw Object.assign(new Error('Follow-up not found'), { status: 404 });
   return data as FollowUp;
 }
 
-/**
- * Fetch all overdue, incomplete follow-ups across all leads.
- * Used by the daily cron job.
- */
-export async function getOverdueFollowUps(): Promise<
-  Array<{
-    id: string;
-    leadName: string;
-    company: string;
-    dueAt: string;
-    assignedToEmail: string;
-    description: string;
-  }>
-> {
+export interface OverdueFollowUp {
+  id: string;
+  leadName: string;
+  company: string;
+  dueAt: string;
+  assignedToEmail: string;
+  description: string;
+}
+
+/** All overdue incomplete follow-ups — used by daily cron job. */
+export async function getOverdueFollowUps(): Promise<OverdueFollowUp[]> {
   const { data, error } = await supabase
     .from('followups')
-    .select(`
-      id,
-      due_at,
-      description,
-      leads!inner(full_name, company, assigned_to),
-      users:user_id(email)
-    `)
+    .select('id, due_at, description, leads!inner(full_name, company), users:user_id(email)')
     .lte('due_at', new Date().toISOString())
     .eq('completed', false);
 
-  if (error) {
-    throw Object.assign(new Error(error.message), { status: 500 });
-  }
+  if (error) throw Object.assign(new Error(error.message), { status: 500 });
 
   return (data ?? []).map((row: Record<string, unknown>) => {
     const lead = row['leads'] as { full_name: string; company: string } | null;
