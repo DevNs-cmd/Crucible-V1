@@ -1,30 +1,30 @@
 import { groq, GROQ_MODEL } from '../config/ai';
 import { supabase } from '../config/database';
-import { AUDIT_SYSTEM_PROMPT, buildAuditUserPrompt } from '../prompts/audit.prompt';
-import { GenerateAuditInput, AuditReport, AuditReportSchema } from '../utils/validators';
+import { PROPOSAL_SYSTEM_PROMPT, buildProposalUserPrompt } from '../prompts/proposal.prompt';
+import { GenerateProposalInput, Proposal, ProposalSchema } from '../utils/validators';
 
 function stripCodeFences(text: string): string {
   return text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
 }
 
 /**
- * Generate an AI business audit report via Groq.
- * Validates JSON against AuditReportSchema before returning.
+ * Generate a professional sales proposal via Groq.
+ * Validates JSON against ProposalSchema before returning.
  */
-export async function generateAuditReport(
-  input: GenerateAuditInput,
+export async function generateProposal(
+  input: GenerateProposalInput,
   requestedBy: string
-): Promise<{ report: AuditReport; generatedAt: string }> {
+): Promise<{ proposal: Proposal; generatedAt: string }> {
   let rawText: string;
 
   try {
     const completion = await groq.chat.completions.create({
       model: GROQ_MODEL,
-      max_tokens: 2000,
+      max_tokens: 3000,
       temperature: 0.7,
       messages: [
-        { role: 'system', content: AUDIT_SYSTEM_PROMPT },
-        { role: 'user', content: buildAuditUserPrompt(input) },
+        { role: 'system', content: PROPOSAL_SYSTEM_PROMPT },
+        { role: 'user', content: buildProposalUserPrompt(input) },
       ],
     });
 
@@ -38,35 +38,35 @@ export async function generateAuditReport(
     if (error.status === 429) {
       throw Object.assign(new Error('AI rate limit reached. Please retry shortly.'), { status: 429 });
     }
-    console.error('[AuditService] Groq API error:', err);
-    throw Object.assign(new Error('Failed to generate audit report.'), { status: 502 });
+    console.error('[ProposalService] Groq API error:', err);
+    throw Object.assign(new Error('Failed to generate proposal.'), { status: 502 });
   }
 
   let parsedJson: unknown;
   try {
     parsedJson = JSON.parse(stripCodeFences(rawText));
   } catch {
-    console.error('[AuditService] JSON parse failed:', rawText.slice(0, 200));
+    console.error('[ProposalService] JSON parse failed:', rawText.slice(0, 200));
     throw Object.assign(new Error('AI returned invalid JSON. Please retry.'), { status: 502 });
   }
 
-  const validation = AuditReportSchema.safeParse(parsedJson);
+  const validation = ProposalSchema.safeParse(parsedJson);
   if (!validation.success) {
-    console.error('[AuditService] Schema validation failed:', validation.error);
-    throw Object.assign(new Error('AI report structure invalid. Please retry.'), { status: 502 });
+    console.error('[ProposalService] Schema validation failed:', validation.error);
+    throw Object.assign(new Error('AI proposal structure invalid. Please retry.'), { status: 502 });
   }
 
   const generatedAt = new Date().toISOString();
 
-  // Fire-and-forget audit log
-  supabase.from('audit_logs').insert({
+  // Fire-and-forget log
+  supabase.from('proposal_logs').insert({
     company_name: input.companyName,
     industry: input.industry,
     requested_by: requestedBy,
     generated_at: generatedAt,
   }).then(({ error }) => {
-    if (error) console.warn('[AuditService] Failed to log audit:', error.message);
+    if (error) console.warn('[ProposalService] Failed to log proposal:', error.message);
   });
 
-  return { report: validation.data, generatedAt };
+  return { proposal: validation.data, generatedAt };
 }

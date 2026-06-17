@@ -1,4 +1,3 @@
-/** Represents a row in the `notes` table. */
 export interface Note {
   id: string;
   lead_id: string;

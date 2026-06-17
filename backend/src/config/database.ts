@@ -3,7 +3,7 @@ import { env } from './env';
 
 /**
  * Singleton Supabase client using the service role key.
- * Bypasses Row Level Security — only use server-side.
+ * Bypasses Row Level Security — server-side use only.
  */
 export const supabase: SupabaseClient = createClient(
   env.SUPABASE_URL,

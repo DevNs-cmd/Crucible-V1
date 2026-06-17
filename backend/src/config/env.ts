@@ -12,8 +12,9 @@ const envSchema = z.object({
 
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
   JWT_EXPIRES_IN: z.string().default('7d'),
+  JWT_REFRESH_EXPIRES_IN: z.string().default('30d'),
 
-  GROQ_API_KEY: z.string().startsWith('gsk_', { message: 'GROQ_API_KEY must start with gsk_' }),
+  GROQ_API_KEY: z.string().min(1, 'GROQ_API_KEY is required'),
 
   N8N_WEBHOOK_NEW_LEAD: z.string().url({ message: 'N8N_WEBHOOK_NEW_LEAD must be a valid URL' }),
   N8N_WEBHOOK_STATUS_CHANGE: z.string().url({ message: 'N8N_WEBHOOK_STATUS_CHANGE must be a valid URL' }),
@@ -21,19 +22,16 @@ const envSchema = z.object({
 
   SMTP_HOST: z.string().min(1, 'SMTP_HOST is required'),
   SMTP_PORT: z.string().default('587').transform(Number),
-  SMTP_USER: z.string().email({ message: 'SMTP_USER must be a valid email' }),
+  SMTP_USER: z.string().min(1, 'SMTP_USER is required'),
   SMTP_PASS: z.string().min(1, 'SMTP_PASS is required'),
   SMTP_FROM: z.string().min(1, 'SMTP_FROM is required'),
 
-  ENABLE_CRON: z
-    .string()
-    .default('false')
-    .transform((v) => v === 'true'),
+  ENABLE_CRON: z.string().default('false').transform((v) => v === 'true'),
 });
 
 /**
- * Parsed and validated environment variables. Crashes the process at startup
- * if any required variable is missing or malformed.
+ * Validated environment variables. Crashes the process at startup if any
+ * required variable is missing or malformed — fail fast, never silently.
  */
 const parsed = envSchema.safeParse(process.env);
 
