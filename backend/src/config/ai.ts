@@ -1,12 +1,15 @@
-import Anthropic from '@anthropic-ai/sdk';
+import Groq from 'groq-sdk';
 import { env } from './env';
 
 /**
- * Singleton Anthropic client instance.
+ * Singleton Groq client instance.
  */
-export const anthropic = new Anthropic({
-  apiKey: env.ANTHROPIC_API_KEY,
+export const groq = new Groq({
+  apiKey: env.GROQ_API_KEY,
 });
 
-/** The Claude model to use for all AI calls. */
-export const CLAUDE_MODEL = 'claude-sonnet-4-20250514' as const;
+/**
+ * Model used for all AI generation tasks.
+ * llama-3.3-70b-versatile: free, fast, strong JSON output.
+ */
+export const GROQ_MODEL = 'llama-3.3-70b-versatile' as const;

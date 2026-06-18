@@ -1,8 +1,7 @@
 import { Router } from 'express';
 import * as WebhooksController from '../controllers/webhooks.controller';
 
-// Webhook endpoints are called by n8n, not by the frontend.
-// They are intentionally not behind JWT auth — secure via shared secret header in production.
+// Called by n8n server-to-server — no JWT auth required
 const router = Router();
 
 router.post('/email/new-lead', WebhooksController.handleNewLeadEmail);

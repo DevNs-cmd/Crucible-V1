@@ -3,7 +3,6 @@ import * as FollowUpsController from '../controllers/followups.controller';
 import { authenticate } from '../middleware/auth';
 
 const router = Router({ mergeParams: true });
-
 router.use(authenticate);
 
 router.get('/', FollowUpsController.getFollowUps);

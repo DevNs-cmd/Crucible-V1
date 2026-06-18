@@ -1,134 +1,54 @@
 import { GenerateAuditSchema, AuditReportSchema } from '../../src/utils/validators';
 import { buildAuditUserPrompt, AUDIT_SYSTEM_PROMPT } from '../../src/prompts/audit.prompt';
 
-describe('GenerateAuditSchema validation', () => {
-  const validInput = {
-    companyName: 'TechCorp',
-    industry: 'SaaS',
-    companyType: 'B2B Startup',
-    companySize: '11-50',
-    problems: ['High churn rate', 'Manual onboarding'],
-    currentTools: ['HubSpot', 'Slack'],
-    budget: 'medium' as const,
-  };
+const validInput = {
+  companyName: 'TechCorp',
+  industry: 'SaaS',
+  companyType: 'B2B Startup',
+  companySize: '11-50',
+  problems: ['High churn', 'Manual onboarding'],
+  currentTools: ['HubSpot'],
+  budget: 'medium' as const,
+};
 
-  it('accepts valid audit input', () => {
-    const result = GenerateAuditSchema.safeParse(validInput);
-    expect(result.success).toBe(true);
-  });
-
-  it('rejects missing companyName', () => {
-    const result = GenerateAuditSchema.safeParse({ ...validInput, companyName: '' });
-    expect(result.success).toBe(false);
-  });
-
-  it('rejects empty problems array', () => {
-    const result = GenerateAuditSchema.safeParse({ ...validInput, problems: [] });
-    expect(result.success).toBe(false);
-  });
-
-  it('rejects invalid budget value', () => {
-    const result = GenerateAuditSchema.safeParse({ ...validInput, budget: 'very-high' });
-    expect(result.success).toBe(false);
-  });
-
-  it('defaults currentTools to empty array', () => {
-    const { currentTools: _t, ...withoutTools } = validInput;
-    const result = GenerateAuditSchema.safeParse(withoutTools);
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.currentTools).toEqual([]);
-    }
+describe('GenerateAuditSchema', () => {
+  it('accepts valid input', () => { expect(GenerateAuditSchema.safeParse(validInput).success).toBe(true); });
+  it('rejects empty companyName', () => { expect(GenerateAuditSchema.safeParse({ ...validInput, companyName: '' }).success).toBe(false); });
+  it('rejects empty problems array', () => { expect(GenerateAuditSchema.safeParse({ ...validInput, problems: [] }).success).toBe(false); });
+  it('rejects invalid budget', () => { expect(GenerateAuditSchema.safeParse({ ...validInput, budget: 'ultra' }).success).toBe(false); });
+  it('defaults currentTools to []', () => {
+    const { currentTools: _t, ...without } = validInput;
+    const r = GenerateAuditSchema.safeParse(without);
+    expect(r.success && r.data.currentTools).toEqual([]);
   });
 });
 
-describe('Audit prompt builder', () => {
-  const input = {
-    companyName: 'Acme',
-    industry: 'E-commerce',
-    companyType: 'B2C Startup',
-    companySize: '1-10',
-    problems: ['No automation'],
-    currentTools: ['Shopify'],
-    budget: 'low' as const,
-  };
-
-  it('includes company name in prompt', () => {
-    const prompt = buildAuditUserPrompt(input);
-    expect(prompt).toContain('Acme');
-  });
-
-  it('includes all problems in prompt', () => {
-    const prompt = buildAuditUserPrompt(input);
-    expect(prompt).toContain('No automation');
-  });
-
-  it('includes tools in prompt', () => {
-    const prompt = buildAuditUserPrompt(input);
-    expect(prompt).toContain('Shopify');
-  });
-
-  it('handles empty currentTools gracefully', () => {
-    const prompt = buildAuditUserPrompt({ ...input, currentTools: [] });
-    expect(prompt).toContain('None specified');
-  });
-
-  it('system prompt instructs JSON-only response', () => {
-    expect(AUDIT_SYSTEM_PROMPT).toContain('ONLY with a single valid JSON object');
-  });
+describe('buildAuditUserPrompt', () => {
+  it('includes company name', () => { expect(buildAuditUserPrompt(validInput)).toContain('TechCorp'); });
+  it('includes all problems', () => { expect(buildAuditUserPrompt(validInput)).toContain('High churn'); });
+  it('includes tools', () => { expect(buildAuditUserPrompt(validInput)).toContain('HubSpot'); });
+  it('handles empty tools', () => { expect(buildAuditUserPrompt({ ...validInput, currentTools: [] })).toContain('None specified'); });
 });
 
-describe('AuditReportSchema validation', () => {
-  const validReport = {
-    executiveSummary: 'This company has significant opportunity in AI automation.',
-    painPoints: [
-      { title: 'Manual processes', description: 'Everything is done manually', severity: 'high' },
-    ],
-    recommendations: [
-      {
-        title: 'Implement CRM',
-        description: 'Deploy HubSpot to centralise leads',
-        priority: 1,
-        estimatedImpact: '30% faster follow-ups',
-      },
-    ],
-    aiOpportunities: [
-      {
-        area: 'Sales',
-        solution: 'AI lead scoring',
-        tools: ['HubSpot AI'],
-        difficulty: 'easy',
-      },
-    ],
-    estimatedROI: '25-40% efficiency gain within 6 months',
-    implementationRoadmap: [
-      {
-        phase: 1,
-        title: 'Foundation',
-        duration: 'Weeks 1-4',
-        tasks: ['Set up CRM', 'Import existing leads'],
-      },
-    ],
-  };
+describe('AUDIT_SYSTEM_PROMPT', () => {
+  it('instructs JSON-only response', () => { expect(AUDIT_SYSTEM_PROMPT).toContain('ONLY with a single valid JSON object'); });
+});
 
-  it('accepts a valid audit report', () => {
-    const result = AuditReportSchema.safeParse(validReport);
-    expect(result.success).toBe(true);
-  });
+const validReport = {
+  executiveSummary: 'Summary here.',
+  painPoints: [{ title: 'Pain', description: 'Desc', severity: 'high' as const }],
+  recommendations: [{ title: 'Rec', description: 'Desc', priority: 1, estimatedImpact: '30%' }],
+  aiOpportunities: [{ area: 'Sales', solution: 'AI scoring', tools: ['HubSpot'], difficulty: 'easy' as const }],
+  estimatedROI: '25-40% in 6 months',
+  implementationRoadmap: [{ phase: 1, title: 'Foundation', duration: 'Weeks 1-4', tasks: ['Setup CRM'] }],
+};
 
+describe('AuditReportSchema', () => {
+  it('accepts valid report', () => { expect(AuditReportSchema.safeParse(validReport).success).toBe(true); });
   it('rejects invalid severity', () => {
-    const result = AuditReportSchema.safeParse({
-      ...validReport,
-      painPoints: [{ ...validReport.painPoints[0], severity: 'critical' }],
-    });
-    expect(result.success).toBe(false);
+    expect(AuditReportSchema.safeParse({ ...validReport, painPoints: [{ ...validReport.painPoints[0], severity: 'critical' }] }).success).toBe(false);
   });
-
   it('rejects invalid difficulty', () => {
-    const result = AuditReportSchema.safeParse({
-      ...validReport,
-      aiOpportunities: [{ ...validReport.aiOpportunities[0], difficulty: 'very-hard' }],
-    });
-    expect(result.success).toBe(false);
+    expect(AuditReportSchema.safeParse({ ...validReport, aiOpportunities: [{ ...validReport.aiOpportunities[0], difficulty: 'extreme' }] }).success).toBe(false);
   });
 });

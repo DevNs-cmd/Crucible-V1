@@ -2,9 +2,7 @@ import { supabase } from '../config/database';
 import { Note } from '../models/note.model';
 import { CreateNoteInput } from '../utils/validators';
 
-/**
- * Fetch all notes for a given lead, ordered newest first.
- */
+/** All notes for a lead, newest first. */
 export async function getNotesByLeadId(leadId: string): Promise<Note[]> {
   const { data, error } = await supabase
     .from('notes')
@@ -12,16 +10,11 @@ export async function getNotesByLeadId(leadId: string): Promise<Note[]> {
     .eq('lead_id', leadId)
     .order('created_at', { ascending: false });
 
-  if (error) {
-    throw Object.assign(new Error(error.message), { status: 500 });
-  }
-
+  if (error) throw Object.assign(new Error(error.message), { status: 500 });
   return (data as Note[]) ?? [];
 }
 
-/**
- * Create a new note attached to a lead.
- */
+/** Create a note on a lead. */
 export async function createNote(
   leadId: string,
   authorId: string,
@@ -33,16 +26,11 @@ export async function createNote(
     .select()
     .single();
 
-  if (error) {
-    throw Object.assign(new Error(error.message), { status: 400 });
-  }
-
+  if (error) throw Object.assign(new Error(error.message), { status: 400 });
   return data as Note;
 }
 
-/**
- * Delete a specific note by ID, scoped to the given lead.
- */
+/** Delete a specific note scoped to its lead. */
 export async function deleteNote(leadId: string, noteId: string): Promise<void> {
   const { error, count } = await supabase
     .from('notes')
@@ -50,11 +38,6 @@ export async function deleteNote(leadId: string, noteId: string): Promise<void> 
     .eq('id', noteId)
     .eq('lead_id', leadId);
 
-  if (error) {
-    throw Object.assign(new Error(error.message), { status: 500 });
-  }
-
-  if (count === 0) {
-    throw Object.assign(new Error('Note not found'), { status: 404 });
-  }
+  if (error) throw Object.assign(new Error(error.message), { status: 500 });
+  if (count === 0) throw Object.assign(new Error('Note not found'), { status: 404 });
 }

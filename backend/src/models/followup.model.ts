@@ -1,4 +1,3 @@
-/** Represents a row in the `followups` table. */
 export interface FollowUp {
   id: string;
   lead_id: string;

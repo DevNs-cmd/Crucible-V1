@@ -3,8 +3,7 @@ import { ZodError } from 'zod';
 import { sendError } from '../utils/response';
 
 /**
- * Global Express error handler.
- * Must be registered as the last middleware in app.ts.
+ * Global Express error handler — must be last middleware in app.ts.
  */
 export function errorHandler(
   err: Error,
@@ -14,13 +13,11 @@ export function errorHandler(
 ): void {
   console.error('[ErrorHandler]', err);
 
-  // Zod validation errors — return 422 with field details
   if (err instanceof ZodError) {
     sendError(res, 'Validation failed', 422, err.flatten().fieldErrors);
     return;
   }
 
-  // Generic application errors
   const status = (err as { status?: number }).status ?? 500;
   const message =
     process.env['NODE_ENV'] === 'production' && status === 500
@@ -30,9 +27,7 @@ export function errorHandler(
   sendError(res, message, status);
 }
 
-/**
- * Middleware to catch 404 Not Found for unregistered routes.
- */
+/** 404 handler for unregistered routes. */
 export function notFound(req: Request, res: Response): void {
   sendError(res, `Route ${req.method} ${req.path} not found`, 404);
 }

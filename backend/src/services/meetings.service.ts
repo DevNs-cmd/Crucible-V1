@@ -2,9 +2,7 @@ import { supabase } from '../config/database';
 import { Meeting } from '../models/meeting.model';
 import { CreateMeetingInput } from '../utils/validators';
 
-/**
- * Fetch all meetings for a given lead, ordered by meeting date descending.
- */
+/** All meetings for a lead, newest first. */
 export async function getMeetingsByLeadId(leadId: string): Promise<Meeting[]> {
   const { data, error } = await supabase
     .from('meetings')
@@ -12,16 +10,11 @@ export async function getMeetingsByLeadId(leadId: string): Promise<Meeting[]> {
     .eq('lead_id', leadId)
     .order('met_at', { ascending: false });
 
-  if (error) {
-    throw Object.assign(new Error(error.message), { status: 500 });
-  }
-
+  if (error) throw Object.assign(new Error(error.message), { status: 500 });
   return (data as Meeting[]) ?? [];
 }
 
-/**
- * Log a new meeting for a lead.
- */
+/** Log a new meeting for a lead. */
 export async function createMeeting(
   leadId: string,
   userId: string,
@@ -40,9 +33,6 @@ export async function createMeeting(
     .select()
     .single();
 
-  if (error) {
-    throw Object.assign(new Error(error.message), { status: 400 });
-  }
-
+  if (error) throw Object.assign(new Error(error.message), { status: 400 });
   return data as Meeting;
 }

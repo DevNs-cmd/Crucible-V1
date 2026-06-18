@@ -1,64 +1,35 @@
 # AlgoForce AI — Backend
 
-Production-ready Express + TypeScript backend for the AlgoForce AI CRM platform.
-Covers B1 (CRM), B2 (AI Audit Generator), and B3 (n8n Automation).
+Production-ready Express + TypeScript backend covering B1 (CRM), B2 (AI Audit + Proposals), B3 (n8n Automation), and B4 (Analytics).
 
 ---
 
-## How to Run
-
-### 1. Clone and install
+## Quick Start
 
 ```bash
-cd backend
+# 1. Install dependencies
 npm install
-```
 
-### 2. Set up environment variables
+# 2. Set up environment variables
+copy .env.example .env
+# Open .env and fill in all values (see below)
 
-```bash
-cp .env.example .env
-```
+# 3. Run database migrations in Supabase SQL Editor (in order):
+#    database/migrations/001_users.sql
+#    database/migrations/002_leads.sql
+#    database/migrations/003_notes_meetings_followups.sql
+#    database/migrations/004_audit_proposal_logs.sql
+#    database/seeds/001_admin_user.sql  (after generating bcrypt hash)
 
-Edit `.env` and fill in all values. The app will **crash at startup** if any
-required variable is missing or malformed (intentional fail-fast behaviour).
+# 4. Generate admin password hash
+node -e "const b=require('bcryptjs');console.log(b.hashSync('Admin@123',10))"
+# Paste output into database/seeds/001_admin_user.sql, then run it
 
-### 3. Set up the database
-
-Open the Supabase SQL Editor and run the migrations in order:
-
-```
-database/migrations/001_initial_schema.sql
-database/migrations/002_seed_admin_user.sql
-```
-
-For the seed file, replace the placeholder password hash with a real bcrypt hash:
-
-```bash
-node -e "const b=require('bcryptjs'); console.log(b.hashSync('YourPassword123', 10))"
-```
-
-### 4. Run in development
-
-```bash
+# 5. Start dev server
 npm run dev
-```
 
-The server starts at `http://localhost:4000`.
-
-### 5. Run tests
-
-```bash
-npm test              # All tests
-npm run test:unit     # Unit tests only
-npm run test:integration  # Integration tests only
-```
-
-### 6. Build for production
-
-```bash
-npm run build
-npm start
+# 6. Run tests
+npm test
 ```
 
 ---
@@ -68,19 +39,20 @@ npm start
 ### Auth
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| POST | `/api/auth/login` | ❌ | Login → returns JWT |
+| POST | `/api/auth/login` | ❌ | Login → returns accessToken + refreshToken |
+| POST | `/api/auth/refresh` | ❌ | Get new access token via refresh token |
 | POST | `/api/auth/logout` | ❌ | Stateless logout |
-| GET | `/api/auth/me` | ✅ | Get current user |
+| GET | `/api/auth/me` | ✅ | Get current user profile |
 
 ### Leads
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
 | GET | `/api/leads` | ✅ | Paginated list (filter: status, assigned_to) |
-| POST | `/api/leads` | ✅ | Create lead (triggers n8n) |
-| GET | `/api/leads/:id` | ✅ | Single lead with notes/meetings/followups |
+| POST | `/api/leads` | ✅ | Create lead + trigger n8n webhook |
+| GET | `/api/leads/:id` | ✅ | Single lead with notes, meetings, followups |
 | PUT | `/api/leads/:id` | ✅ | Update lead fields |
 | DELETE | `/api/leads/:id` | ✅ | Soft delete |
-| PATCH | `/api/leads/:id/status` | ✅ | Update status (triggers n8n) |
+| PATCH | `/api/leads/:id/status` | ✅ | Update status + trigger n8n webhook |
 
 ### Notes
 | Method | Endpoint | Auth | Description |
@@ -93,55 +65,77 @@ npm start
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
 | GET | `/api/leads/:id/meetings` | ✅ | List meetings |
-| POST | `/api/leads/:id/meetings` | ✅ | Log meeting |
+| POST | `/api/leads/:id/meetings` | ✅ | Log a meeting |
 
 ### Follow-Ups
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
 | GET | `/api/leads/:id/followups` | ✅ | List follow-ups |
 | POST | `/api/leads/:id/followups` | ✅ | Create follow-up |
-| PATCH | `/api/leads/:id/followups/:fid` | ✅ | Mark complete |
+| PATCH | `/api/leads/:id/followups/:fid` | ✅ | Mark as completed |
 
-### AI Audit
+### AI Audit (B2)
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| POST | `/api/audit/generate` | ✅ | Generate AI audit report |
+| POST | `/api/audit/generate` | ✅ | Generate AI business audit report |
+
+### Proposals (B2)
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/proposals/generate` | ✅ | Generate AI sales proposal |
+
+### Analytics (B4)
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/analytics/dashboard` | ✅ | Overall CRM stats |
+| GET | `/api/analytics/leads-by-status` | ✅ | Lead count per status |
+| GET | `/api/analytics/revenue` | ✅ | Monthly closed-won revenue (6 months) |
+| GET | `/api/analytics/top-performers` | ✅ | Top users by closed deals |
 
 ### Webhooks (called by n8n)
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| POST | `/api/webhooks/email/new-lead` | ❌ | Send new lead email |
-| POST | `/api/webhooks/email/status-change` | ❌ | Send status change email |
-| POST | `/api/webhooks/email/followup-reminder` | ❌ | Send reminder email |
+| POST | `/api/webhooks/email/new-lead` | ❌ | Trigger new lead email |
+| POST | `/api/webhooks/email/status-change` | ❌ | Trigger status change email |
+| POST | `/api/webhooks/email/followup-reminder` | ❌ | Trigger follow-up reminder email |
 
 ---
 
-## Response Format
-
-All endpoints return a consistent shape:
+## Standard Response Format
 
 ```json
 // Success
 { "success": true, "data": {}, "message": "OK", "pagination": { "page": 1, "limit": 20, "total": 100 } }
 
 // Error
-{ "success": false, "error": "Validation failed", "details": { "email": ["Invalid email"] } }
+{ "success": false, "error": "Validation failed", "details": { "field": ["message"] } }
 ```
 
 ---
 
-## Architecture Notes
+## Environment Variables
 
-- **Services** own all business logic and Supabase queries
-- **Controllers** are thin — parse input, call service, send response
-- **Automation webhooks** are fire-and-forget — failures never break the API
-- **Email service** has 2-retry logic on SMTP failure
-- **Cron job** only runs when `NODE_ENV=production` or `ENABLE_CRON=true`
-- **Env validation** crashes the process on startup if config is invalid
+| Variable | Description | Where to get |
+|----------|-------------|--------------|
+| `SUPABASE_URL` | Project URL | supabase.com → Settings → API |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key | supabase.com → Settings → API |
+| `JWT_SECRET` | Random 32+ char string | Generate in PowerShell |
+| `JWT_EXPIRES_IN` | Access token TTL | e.g. `7d` |
+| `JWT_REFRESH_EXPIRES_IN` | Refresh token TTL | e.g. `30d` |
+| `GROQ_API_KEY` | Groq API key | console.groq.com (free) |
+| `N8N_WEBHOOK_*` | n8n webhook URLs | n8n.io or use placeholders |
+| `SMTP_HOST/PORT/USER/PASS` | Email config | Gmail + App Password |
+| `SMTP_FROM` | Sender name/email | e.g. `"AlgoForce AI <you@gmail.com>"` |
+| `ENABLE_CRON` | Enable cron in dev | `false` by default |
 
 ---
 
-## n8n Workflow Setup
+## Architecture
 
-See `N8N_WORKFLOWS.md` for full workflow documentation, payload schemas, and
-recommended node configurations for all three automation triggers.
+- **Services** — all business logic and Supabase queries
+- **Controllers** — thin, only parse req/res and call services
+- **Routes** — mount controllers, apply auth + rate limit middleware
+- **Automation** — fire-and-forget, never crashes the API on webhook failure
+- **Email** — 2-retry SMTP logic
+- **Cron** — only runs when `NODE_ENV=production` or `ENABLE_CRON=true`
+- **Env validation** — crashes at startup if any variable is missing/wrong

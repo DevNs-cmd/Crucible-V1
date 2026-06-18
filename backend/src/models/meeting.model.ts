@@ -1,4 +1,3 @@
-/** Represents a row in the `meetings` table. */
 export interface Meeting {
   id: string;
   lead_id: string;

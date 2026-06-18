@@ -19,9 +19,7 @@ export interface ErrorResponse {
   details?: unknown;
 }
 
-/**
- * Send a standardised 200 success response.
- */
+/** Send a standardised success response. */
 export function sendSuccess<T>(
   res: Response,
   data: T,
@@ -34,9 +32,7 @@ export function sendSuccess<T>(
   res.status(status).json(body);
 }
 
-/**
- * Send a standardised error response.
- */
+/** Send a standardised error response. */
 export function sendError(
   res: Response,
   error: string,

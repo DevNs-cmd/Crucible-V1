@@ -1,4 +1,3 @@
-/** Represents a row in the `users` table. */
 export interface User {
   id: string;
   email: string;
@@ -9,5 +8,5 @@ export interface User {
   updated_at: string;
 }
 
-/** User without the password field — safe to return in API responses. */
+/** Safe user object — no password field */
 export type PublicUser = Omit<User, 'password'>;
