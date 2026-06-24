@@ -191,9 +191,9 @@ export default function DashboardPage() {
           <StaticSprintChecklist />
           <StaticActivityLog />
         </div>
-
-        <StaticIntegrationStatus />
-        <StaticSystemCards />
+       {/*Commented out tracking components per layout feedback */}
+        {/*<StaticIntegrationStatus /> */}
+        {/*<StaticSystemCards />*/}
       </main>
     </AppShell>
     </ProtectedRoute>
