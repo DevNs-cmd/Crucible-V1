@@ -1,13 +1,21 @@
 /**
  * migrate.js — Run all DB migrations + seed against Supabase PostgreSQL
  * Usage: node scripts/migrate.js
+ *
+ * Requires DATABASE_URL in your .env file:
+ *   DATABASE_URL=postgresql://postgres:<password>@db.<ref>.supabase.co:5432/postgres
  */
 
+require('dotenv').config();
 const { Client } = require('pg');
 const bcrypt = require('bcryptjs');
 
-const CONNECTION_STRING =
-  'postgresql://postgres:devnsuman1234@db.zsmszcukauxapuercngb.supabase.co:5432/postgres';
+const CONNECTION_STRING = process.env.DATABASE_URL;
+if (!CONNECTION_STRING) {
+  console.error('\n❌ DATABASE_URL is not set in your .env file.');
+  console.error('  Add: DATABASE_URL=postgresql://postgres:<password>@db.<ref>.supabase.co:5432/postgres\n');
+  process.exit(1);
+}
 
 // ─── SQL Migrations (in order) ────────────────────────────────────────────────
 
