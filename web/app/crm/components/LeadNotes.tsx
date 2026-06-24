@@ -11,10 +11,6 @@ interface LeadNotesProps {
   onDelete: (noteId: string) => Promise<void>;
 }
 
-function noteText(note: LeadNote) {
-  return note.content ?? note.body ?? "";
-}
-
 export function LeadNotes({ notes, isSaving, onAdd, onDelete }: LeadNotesProps) {
   const [content, setContent] = useState("");
   const [error, setError] = useState("");
@@ -27,8 +23,12 @@ export function LeadNotes({ notes, isSaving, onAdd, onDelete }: LeadNotesProps) 
     }
 
     setError("");
-    await onAdd(value);
-    setContent("");
+    try {
+      await onAdd(value);
+      setContent("");
+    } catch {
+      setError("Unable to save note. Please try again.");
+    }
   };
 
   return (
@@ -93,7 +93,7 @@ export function LeadNotes({ notes, isSaving, onAdd, onDelete }: LeadNotesProps) 
                   </button>
                 </div>
                 <p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">
-                  {noteText(note)}
+                  {note.content}
                 </p>
               </article>
             ))

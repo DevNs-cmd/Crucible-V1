@@ -12,28 +12,32 @@ interface LeadMeetingsProps {
 
 export function LeadMeetings({ meetings, isSaving, onAdd }: LeadMeetingsProps) {
   const [title, setTitle] = useState("");
-  const [scheduledAt, setScheduledAt] = useState("");
-  const [location, setLocation] = useState("");
+  const [metAt, setMetAt] = useState("");
+  const [outcome, setOutcome] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
 
   const submit = async () => {
-    if (!title.trim() || !scheduledAt) {
-      setError("Title and scheduled time are required.");
+    if (!title.trim() || !metAt) {
+      setError("Title and meeting time are required.");
       return;
     }
 
     setError("");
-    await onAdd({
-      title: title.trim(),
-      scheduled_at: new Date(scheduledAt).toISOString(),
-      location: location.trim() || undefined,
-      notes: notes.trim() || undefined,
-    });
-    setTitle("");
-    setScheduledAt("");
-    setLocation("");
-    setNotes("");
+    try {
+      await onAdd({
+        title: title.trim(),
+        met_at: new Date(metAt).toISOString(),
+        outcome: outcome.trim() || undefined,
+        notes: notes.trim() || undefined,
+      });
+      setTitle("");
+      setMetAt("");
+      setOutcome("");
+      setNotes("");
+    } catch {
+      setError("Unable to log meeting. Please try again.");
+    }
   };
 
   return (
@@ -43,7 +47,7 @@ export function LeadMeetings({ meetings, isSaving, onAdd }: LeadMeetingsProps) {
           <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600">
             Meetings
           </p>
-          <h2 className="text-base font-bold text-slate-900">Schedule Meeting</h2>
+          <h2 className="text-base font-bold text-slate-900">Log Meeting</h2>
         </div>
         <div className="space-y-4 px-6 py-5">
           <label className="block">
@@ -58,22 +62,22 @@ export function LeadMeetings({ meetings, isSaving, onAdd }: LeadMeetingsProps) {
           </label>
           <label className="block">
             <span className="mb-1 block text-xs font-semibold text-slate-600">
-              Scheduled Time
+              Meeting Time
             </span>
             <input
               type="datetime-local"
-              value={scheduledAt}
-              onChange={(event) => setScheduledAt(event.target.value)}
+              value={metAt}
+              onChange={(event) => setMetAt(event.target.value)}
               className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
           </label>
           <label className="block">
             <span className="mb-1 block text-xs font-semibold text-slate-600">
-              Location
+              Outcome
             </span>
             <input
-              value={location}
-              onChange={(event) => setLocation(event.target.value)}
+              value={outcome}
+              onChange={(event) => setOutcome(event.target.value)}
               className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
           </label>
@@ -99,7 +103,7 @@ export function LeadMeetings({ meetings, isSaving, onAdd }: LeadMeetingsProps) {
             disabled={isSaving}
             className="w-full rounded-xl bg-amber-600 py-2.5 text-sm font-bold text-white shadow-sm shadow-amber-200 transition-colors hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-amber-300"
           >
-            {isSaving ? "Scheduling..." : "Schedule Meeting"}
+            {isSaving ? "Saving..." : "Log Meeting"}
           </button>
         </div>
       </div>
@@ -126,9 +130,9 @@ export function LeadMeetings({ meetings, isSaving, onAdd }: LeadMeetingsProps) {
                       {formatDateTime(getMeetingDate(meeting))}
                     </p>
                   </div>
-                  {meeting.location && (
+                  {meeting.outcome && (
                     <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
-                      {meeting.location}
+                      {meeting.outcome}
                     </span>
                   )}
                 </div>

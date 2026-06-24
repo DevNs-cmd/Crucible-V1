@@ -3,6 +3,8 @@
 import Link from "next/link";
 import type { Lead } from "@/app/lib/api";
 import {
+  displayCompany,
+  displayEmail,
   formatCurrency,
   initials,
   leadValue,
@@ -26,6 +28,8 @@ export function LeadCard({
   onMove,
 }: LeadCardProps) {
   const cfg = STATUS_CONFIG[lead.status];
+  const company = displayCompany(lead.company);
+  const email = displayEmail(lead.email);
 
   return (
     <article className="group rounded-xl border border-slate-100 bg-slate-50 px-4 py-3.5 transition-all hover:border-amber-200 hover:shadow-sm">
@@ -37,7 +41,7 @@ export function LeadCard({
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-bold leading-tight text-slate-900">
-                {lead.company}
+                {company}
               </p>
               <p className="truncate text-[11px] text-slate-500">{lead.full_name}</p>
             </div>
@@ -49,7 +53,7 @@ export function LeadCard({
           </span>
         </div>
 
-        <p className="truncate text-[11px] text-slate-400">{lead.email}</p>
+        <p className="truncate text-[11px] text-slate-400">{email}</p>
 
         <div className="mt-2.5 flex items-center justify-between gap-2">
           <span className="text-base font-extrabold text-slate-900">

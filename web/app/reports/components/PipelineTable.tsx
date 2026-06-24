@@ -1,4 +1,4 @@
-import type { Lead } from "@/app/lib/api";
+import type { Lead, LeadsByStatus } from "@/app/lib/api";
 import {
   formatCurrency,
   leadValue,
@@ -8,10 +8,22 @@ import {
 
 interface PipelineTableProps {
   leads: Lead[];
+  statusCounts: LeadsByStatus[];
+  totalPipelineValue: number;
 }
 
-export function PipelineTable({ leads }: PipelineTableProps) {
-  const totalValue = leads.reduce((sum, lead) => sum + leadValue(lead), 0);
+export function PipelineTable({
+  leads,
+  statusCounts,
+  totalPipelineValue,
+}: PipelineTableProps) {
+  const countByStatus = new Map(statusCounts.map((item) => [item.status, item.count]));
+  const totalValue =
+    totalPipelineValue || leads.reduce((sum, lead) => sum + leadValue(lead), 0);
+  const totalCount =
+    statusCounts.length > 0
+      ? statusCounts.reduce((sum, item) => sum + item.count, 0)
+      : leads.length;
 
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
@@ -35,8 +47,9 @@ export function PipelineTable({ leads }: PipelineTableProps) {
           <tbody className="divide-y divide-slate-100">
             {STATUS_COLUMNS.map((status) => {
               const statusLeads = leads.filter((lead) => lead.status === status.value);
+              const leadCount = countByStatus.get(status.value) ?? statusLeads.length;
               const revenue = statusLeads.reduce((sum, lead) => sum + leadValue(lead), 0);
-              const average = statusLeads.length > 0 ? revenue / statusLeads.length : 0;
+              const average = leadCount > 0 ? revenue / leadCount : 0;
               const share = totalValue > 0 ? (revenue / totalValue) * 100 : 0;
               const cfg = STATUS_CONFIG[status.value];
 
@@ -48,7 +61,7 @@ export function PipelineTable({ leads }: PipelineTableProps) {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm font-bold text-slate-700">
-                    {statusLeads.length}
+                    {leadCount}
                   </td>
                   <td className="px-6 py-4 text-sm font-bold text-slate-900">
                     {formatCurrency(revenue)}
@@ -65,7 +78,7 @@ export function PipelineTable({ leads }: PipelineTableProps) {
           </tbody>
         </table>
       </div>
-      {leads.length === 0 && (
+      {totalCount === 0 && (
         <p className="border-t border-slate-100 px-6 py-6 text-sm text-slate-400">
           No lead data is available for reporting yet.
         </p>

@@ -1,6 +1,12 @@
 import Link from "next/link";
 import type { Lead } from "@/app/lib/api";
-import { formatCurrency, formatDateTime, leadValue, STATUS_LABELS } from "@/app/lib/crm";
+import {
+  displayCompany,
+  formatCurrency,
+  formatDateTime,
+  leadValue,
+  STATUS_LABELS,
+} from "@/app/lib/crm";
 
 interface RecentLeadsProps {
   leads: Lead[];
@@ -30,7 +36,9 @@ export function RecentLeads({ leads }: RecentLeadsProps) {
               className="flex items-center justify-between gap-4 px-6 py-4 transition-colors hover:bg-slate-50"
             >
               <div className="min-w-0">
-                <p className="truncate text-sm font-bold text-slate-900">{lead.company}</p>
+                <p className="truncate text-sm font-bold text-slate-900">
+                  {displayCompany(lead.company)}
+                </p>
                 <p className="truncate text-xs text-slate-500">{lead.full_name}</p>
                 <p className="text-[11px] text-slate-400">
                   {formatDateTime(lead.created_at)}

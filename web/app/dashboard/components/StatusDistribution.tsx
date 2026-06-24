@@ -1,12 +1,13 @@
-import type { Lead } from "@/app/lib/api";
+import type { LeadsByStatus } from "@/app/lib/api";
 import { STATUS_COLUMNS, STATUS_CONFIG } from "@/app/lib/crm";
 
 interface StatusDistributionProps {
-  leads: Lead[];
+  statusCounts: LeadsByStatus[];
 }
 
-export function StatusDistribution({ leads }: StatusDistributionProps) {
-  const total = leads.length;
+export function StatusDistribution({ statusCounts }: StatusDistributionProps) {
+  const countByStatus = new Map(statusCounts.map((item) => [item.status, item.count]));
+  const total = statusCounts.reduce((sum, item) => sum + item.count, 0);
 
   return (
     <section className="rounded-2xl border border-slate-100 bg-white px-6 py-5 shadow-sm">
@@ -18,7 +19,7 @@ export function StatusDistribution({ leads }: StatusDistributionProps) {
       </div>
       <div className="space-y-4">
         {STATUS_COLUMNS.map((status) => {
-          const count = leads.filter((lead) => lead.status === status.value).length;
+          const count = countByStatus.get(status.value) ?? 0;
           const pct = total > 0 ? (count / total) * 100 : 0;
           const cfg = STATUS_CONFIG[status.value];
 

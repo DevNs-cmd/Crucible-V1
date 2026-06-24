@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ProtectedRoute } from "@/app/components/ProtectedRoute";
 import { AppShell } from "@/app/components/AppShell";
 import { PageHeader } from "@/app/components/PageHeader";
 import { AuditForm } from "@/app/audit/components/AuditForm";
@@ -8,6 +9,7 @@ import { AuditReport } from "@/app/audit/components/AuditReport";
 import {
   apiRequest,
   type AuditGenerateInput,
+  type AuditGenerateResponse,
   type AuditReport as AuditReportData,
 } from "@/app/lib/api";
 import { getErrorMessage } from "@/app/lib/crm";
@@ -20,18 +22,16 @@ export default function AuditPage() {
   const [error, setError] = useState("");
 
   const generateAudit = async (input: AuditGenerateInput) => {
-    if (!token) return;
-
     setIsLoading(true);
     setError("");
 
     try {
-      const data = await apiRequest<AuditReportData>("/audit/generate", {
+      const data = await apiRequest<AuditGenerateResponse>("/audit/generate", {
         method: "POST",
         token,
         body: input,
       });
-      setReport(data);
+      setReport(data.report);
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -40,7 +40,8 @@ export default function AuditPage() {
   };
 
   return (
-    <AppShell section="AI Audit">
+    <ProtectedRoute>
+      <AppShell section="AI Audit">
       <main className="mx-auto max-w-[1400px] space-y-7 px-6 py-8">
         <PageHeader
           eyebrow="Audit Generator"
@@ -60,6 +61,7 @@ export default function AuditPage() {
         </div>
       </main>
     </AppShell>
+    </ProtectedRoute>
   );
 }
 

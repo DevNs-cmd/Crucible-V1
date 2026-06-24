@@ -9,16 +9,6 @@ function toText(value: string | string[] | undefined) {
   return value?.trim() || "No details returned.";
 }
 
-function toList(value: string | string[] | undefined) {
-  if (Array.isArray(value)) return value.filter(Boolean);
-  if (!value) return [];
-
-  return value
-    .split(/\r?\n/)
-    .map((item) => item.replace(/^[-*]\s*/, "").trim())
-    .filter(Boolean);
-}
-
 function ReportList({ items }: { items: string[] }) {
   if (items.length === 0) {
     return <p className="text-sm text-slate-400">No details returned.</p>;
@@ -36,6 +26,28 @@ function ReportList({ items }: { items: string[] }) {
 }
 
 export function AuditReport({ report }: AuditReportProps) {
+  const painPoints =
+    report?.painPoints.map(
+      (item) => `${item.title} (${item.severity}): ${item.description}`
+    ) ?? [];
+  const recommendations =
+    report?.recommendations.map(
+      (item) =>
+        `${item.priority}. ${item.title}: ${item.description} Impact: ${item.estimatedImpact}`
+    ) ?? [];
+  const aiOpportunities =
+    report?.aiOpportunities.map(
+      (item) =>
+        `${item.area}: ${item.solution} Tools: ${
+          item.tools.length > 0 ? item.tools.join(", ") : "None specified"
+        }. Difficulty: ${item.difficulty}`
+    ) ?? [];
+  const roadmap =
+    report?.implementationRoadmap.map(
+      (item) =>
+        `Phase ${item.phase} - ${item.title} (${item.duration}): ${item.tasks.join("; ")}`
+    ) ?? [];
+
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
       <div className="border-b border-slate-100 px-6 pb-4 pt-5">
@@ -69,12 +81,12 @@ export function AuditReport({ report }: AuditReportProps) {
             </article>
 
             {[
-              { title: "Pain Points", items: toList(report.painPoints) },
-              { title: "Recommendations", items: toList(report.recommendations) },
-              { title: "AI Opportunities", items: toList(report.aiOpportunities) },
+              { title: "Pain Points", items: painPoints },
+              { title: "Recommendations", items: recommendations },
+              { title: "AI Opportunities", items: aiOpportunities },
               {
                 title: "Implementation Roadmap",
-                items: toList(report.implementationRoadmap),
+                items: roadmap,
               },
             ].map((section) => (
               <article key={section.title}>

@@ -23,26 +23,27 @@ export function LeadFollowups({
   onAdd,
   onToggle,
 }: LeadFollowupsProps) {
-  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
-  const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
 
   const submit = async () => {
-    if (!title.trim() || !dueDate) {
-      setError("Title and due date are required.");
+    if (!description.trim() || !dueDate) {
+      setError("Description and due date are required.");
       return;
     }
 
     setError("");
-    await onAdd({
-      title: title.trim(),
-      due_date: new Date(dueDate).toISOString(),
-      notes: notes.trim() || undefined,
-    });
-    setTitle("");
-    setDueDate("");
-    setNotes("");
+    try {
+      await onAdd({
+        description: description.trim(),
+        due_at: new Date(dueDate).toISOString(),
+      });
+      setDescription("");
+      setDueDate("");
+    } catch {
+      setError("Unable to create follow-up. Please try again.");
+    }
   };
 
   return (
@@ -57,11 +58,11 @@ export function LeadFollowups({
         <div className="space-y-4 px-6 py-5">
           <label className="block">
             <span className="mb-1 block text-xs font-semibold text-slate-600">
-              Title
+              Description
             </span>
             <input
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
               className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
           </label>
@@ -74,17 +75,6 @@ export function LeadFollowups({
               value={dueDate}
               onChange={(event) => setDueDate(event.target.value)}
               className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400"
-            />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-xs font-semibold text-slate-600">
-              Notes
-            </span>
-            <textarea
-              value={notes}
-              onChange={(event) => setNotes(event.target.value)}
-              rows={5}
-              className="w-full resize-none rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
           </label>
           {error && (
@@ -126,28 +116,23 @@ export function LeadFollowups({
                           complete ? "text-slate-400 line-through" : "text-slate-900"
                         }`}
                       >
-                        {followup.title || "Follow-up"}
+                        {followup.description}
                       </h3>
                       <p className="text-xs font-semibold text-slate-400">
                         Due {formatShortDate(getFollowupDate(followup))}
                       </p>
-                      {followup.notes && (
-                        <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-600">
-                          {followup.notes}
-                        </p>
-                      )}
                     </div>
                     <button
                       type="button"
                       onClick={() => onToggle(followup)}
-                      disabled={updatingId === followup.id}
+                      disabled={updatingId === followup.id || complete}
                       className={`rounded-xl px-3 py-2 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                         complete
                           ? "border border-slate-200 text-slate-500 hover:bg-slate-50"
                           : "border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
                       }`}
                     >
-                      {complete ? "Reopen" : "Mark Done"}
+                      {complete ? "Done" : "Mark Done"}
                     </button>
                   </div>
                 </article>

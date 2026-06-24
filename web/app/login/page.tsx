@@ -24,11 +24,12 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
 
+  // Redirect authenticated users to dashboard
   useEffect(() => {
-    if (status === "authenticated" && !loginRedirectInFlight.current) {
-      router.replace("/dashboard");
+    if (status === "authenticated") {
+      router.replace(getNextPath());
     }
-  }, [router, status]);
+  }, [status, router]);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

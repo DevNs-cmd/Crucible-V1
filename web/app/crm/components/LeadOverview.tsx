@@ -22,6 +22,9 @@ type LeadEditForm = {
   value: string;
 };
 
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 interface LeadOverviewProps {
   lead: Lead;
   isSaving: boolean;
@@ -36,9 +39,9 @@ interface LeadOverviewProps {
 function buildForm(lead: Lead): LeadEditForm {
   return {
     full_name: lead.full_name,
-    email: lead.email,
+    email: lead.email ?? "",
     phone: lead.phone ?? "",
-    company: lead.company,
+    company: lead.company ?? "",
     industry: lead.industry ?? "",
     source: lead.source ?? "",
     assigned_to: lead.assigned_to ?? "",
@@ -75,11 +78,12 @@ export function LeadOverview({
     const fullName = form.full_name.trim();
     const email = form.email.trim();
     const company = form.company.trim();
+    const assignedTo = form.assigned_to.trim();
     const rawValue = form.value.trim();
     const value = rawValue ? Number(rawValue) : null;
 
-    if (!fullName || !email || !company) {
-      setLocalError("Full name, email, and company are required.");
+    if (!fullName) {
+      setLocalError("Full name is required.");
       return;
     }
 
@@ -88,15 +92,20 @@ export function LeadOverview({
       return;
     }
 
+    if (assignedTo && !UUID_PATTERN.test(assignedTo)) {
+      setLocalError("Assigned To must be a valid user UUID.");
+      return;
+    }
+
     await onSave({
       full_name: fullName,
       email,
-      phone: form.phone.trim() || null,
+      phone: form.phone.trim() || undefined,
       company,
-      industry: form.industry.trim() || null,
-      source: form.source.trim() || null,
-      assigned_to: form.assigned_to.trim() || null,
-      value,
+      industry: form.industry.trim() || undefined,
+      source: form.source.trim() || undefined,
+      assigned_to: assignedTo || undefined,
+      value: value ?? undefined,
     });
   };
 

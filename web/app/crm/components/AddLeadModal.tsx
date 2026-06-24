@@ -51,8 +51,8 @@ export function AddLeadModal({
     const rawValue = form.value.trim();
     const value = rawValue ? Number(rawValue) : undefined;
 
-    if (!fullName || !email || !company) {
-      setLocalError("Full name, email, and company are required.");
+    if (!fullName) {
+      setLocalError("Full name is required.");
       return;
     }
 
@@ -63,8 +63,8 @@ export function AddLeadModal({
 
     await onAdd({
       full_name: fullName,
-      email,
-      company,
+      email: email || undefined,
+      company: company || undefined,
       industry: industry || undefined,
       value,
       status: form.status,

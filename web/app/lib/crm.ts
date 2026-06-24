@@ -117,36 +117,41 @@ export function leadValue(lead: Lead) {
   return Number(lead.value ?? 0);
 }
 
-export function initials(company: string) {
-  const words = company.trim().split(/\s+/).filter(Boolean);
+export function displayCompany(company: string | null | undefined) {
+  return company?.trim() || "Unspecified company";
+}
+
+export function displayEmail(email: string | null | undefined) {
+  return email?.trim() || "No email";
+}
+
+export function initials(company: string | null | undefined) {
+  const value = displayCompany(company);
+  const words = value.trim().split(/\s+/).filter(Boolean);
 
   if (words.length >= 2) {
     return `${words[0][0]}${words[1][0]}`.toUpperCase();
   }
 
-  return company.slice(0, 2).toUpperCase() || "LD";
+  return value.slice(0, 2).toUpperCase() || "LD";
 }
 
 export function getMeetingDate(meeting: {
-  scheduled_at?: string | null;
-  starts_at?: string | null;
-  meeting_date?: string | null;
+  met_at?: string | null;
 }) {
-  return meeting.scheduled_at ?? meeting.starts_at ?? meeting.meeting_date ?? null;
+  return meeting.met_at ?? null;
 }
 
 export function getFollowupDate(followup: {
-  due_date?: string | null;
   due_at?: string | null;
 }) {
-  return followup.due_date ?? followup.due_at ?? null;
+  return followup.due_at ?? null;
 }
 
 export function isFollowupComplete(followup: {
-  completed?: boolean | null;
+  completed?: boolean;
   completed_at?: string | null;
-  status?: string | null;
 }) {
-  return Boolean(followup.completed || followup.completed_at) || followup.status === "completed";
+  return Boolean(followup.completed || followup.completed_at);
 }
 

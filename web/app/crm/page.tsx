@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { ProtectedRoute } from "@/app/components/ProtectedRoute";
 import { AppShell } from "@/app/components/AppShell";
 import { PageHeader } from "@/app/components/PageHeader";
 import { AddLeadModal } from "@/app/crm/components/AddLeadModal";
@@ -13,6 +14,8 @@ import {
   type LeadStatus,
 } from "@/app/lib/api";
 import {
+  displayCompany,
+  displayEmail,
   formatCurrency,
   getErrorMessage,
   leadValue,
@@ -65,9 +68,9 @@ export default function CRMPage() {
 
     return leads.filter((lead) => {
       return (
-        lead.company.toLowerCase().includes(query) ||
+        displayCompany(lead.company).toLowerCase().includes(query) ||
         lead.full_name.toLowerCase().includes(query) ||
-        lead.email.toLowerCase().includes(query) ||
+        displayEmail(lead.email).toLowerCase().includes(query) ||
         (lead.industry ?? "").toLowerCase().includes(query)
       );
     });
@@ -85,8 +88,6 @@ export default function CRMPage() {
   };
 
   const addLead = async (data: CreateLeadInput) => {
-    if (!token) return;
-
     setIsSaving(true);
     setModalError("");
 
@@ -106,7 +107,7 @@ export default function CRMPage() {
   };
 
   const moveLead = async (id: string, dir: 1 | -1) => {
-    if (!token || updatingLeadId) return;
+    if (updatingLeadId) return;
 
     const lead = leads.find((item) => item.id === id);
     if (!lead) return;
@@ -140,7 +141,8 @@ export default function CRMPage() {
   };
 
   return (
-    <AppShell
+    <ProtectedRoute>
+      <AppShell
       section="CRM Pipeline"
       actions={
         <button
@@ -241,6 +243,7 @@ export default function CRMPage() {
         <PipelineSummary leads={leads} />
       </main>
     </AppShell>
+    </ProtectedRoute>
   );
 }
 

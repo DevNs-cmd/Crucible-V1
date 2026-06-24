@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { ProtectedRoute } from "@/app/components/ProtectedRoute";
 import { AppShell } from "@/app/components/AppShell";
 import { PageHeader } from "@/app/components/PageHeader";
 import { LeadFollowups } from "@/app/crm/components/LeadFollowups";
@@ -21,6 +22,8 @@ import {
   type UpdateLeadInput,
 } from "@/app/lib/api";
 import {
+  displayCompany,
+  displayEmail,
   formatCurrency,
   getErrorMessage,
   getFollowupDate,
@@ -78,7 +81,8 @@ export default function LeadDetailPage() {
   const [updatingFollowupId, setUpdatingFollowupId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (authStatus !== "authenticated" || !token || !id) return;
+    if (authStatus !== "authenticated" || !token) return;
+    if (!id) return;
 
     let active = true;
 
@@ -147,7 +151,7 @@ export default function LeadDetailPage() {
   );
 
   const saveLead = async (input: UpdateLeadInput) => {
-    if (!token || !lead) return;
+    if (!lead) return;
 
     setIsSavingLead(true);
     setSaveError("");
@@ -167,7 +171,7 @@ export default function LeadDetailPage() {
   };
 
   const updateStatus = async (status: LeadStatus) => {
-    if (!token || !lead || status === lead.status) return;
+    if (!lead || status === lead.status) return;
 
     setIsUpdatingStatus(true);
     setSaveError("");
@@ -187,8 +191,8 @@ export default function LeadDetailPage() {
   };
 
   const deleteLead = async () => {
-    if (!token || !lead) return;
-    if (!window.confirm(`Delete ${lead.company}? This cannot be undone.`)) return;
+    if (!lead) return;
+    if (!window.confirm(`Delete ${displayCompany(lead.company)}? This cannot be undone.`)) return;
 
     setIsDeleting(true);
     setSaveError("");
@@ -206,9 +210,10 @@ export default function LeadDetailPage() {
   };
 
   const addNote = async (content: string) => {
-    if (!token || !lead) return;
+    if (!lead) return;
 
     setIsSavingNote(true);
+    setRelatedError("");
     try {
       const note = await apiRequest<LeadNote>(`/leads/${lead.id}/notes`, {
         method: "POST",
@@ -216,25 +221,34 @@ export default function LeadDetailPage() {
         body: { content },
       });
       setNotes((prev) => [note, ...prev]);
+    } catch (err) {
+      setRelatedError(getErrorMessage(err));
+      throw err;
     } finally {
       setIsSavingNote(false);
     }
   };
 
   const deleteNote = async (noteId: string) => {
-    if (!token || !lead) return;
+    if (!lead) return;
 
-    await apiRequest<null>(`/leads/${lead.id}/notes/${noteId}`, {
-      method: "DELETE",
-      token,
-    });
-    setNotes((prev) => prev.filter((note) => note.id !== noteId));
+    setRelatedError("");
+    try {
+      await apiRequest<null>(`/leads/${lead.id}/notes/${noteId}`, {
+        method: "DELETE",
+        token,
+      });
+      setNotes((prev) => prev.filter((note) => note.id !== noteId));
+    } catch (err) {
+      setRelatedError(getErrorMessage(err));
+    }
   };
 
   const addMeeting = async (meeting: CreateMeetingInput) => {
-    if (!token || !lead) return;
+    if (!lead) return;
 
     setIsSavingMeeting(true);
+    setRelatedError("");
     try {
       const created = await apiRequest<LeadMeeting>(`/leads/${lead.id}/meetings`, {
         method: "POST",
@@ -242,15 +256,19 @@ export default function LeadDetailPage() {
         body: meeting,
       });
       setMeetings((prev) => sortMeetings([...prev, created]));
+    } catch (err) {
+      setRelatedError(getErrorMessage(err));
+      throw err;
     } finally {
       setIsSavingMeeting(false);
     }
   };
 
   const addFollowup = async (followup: CreateFollowupInput) => {
-    if (!token || !lead) return;
+    if (!lead) return;
 
     setIsSavingFollowup(true);
+    setRelatedError("");
     try {
       const created = await apiRequest<LeadFollowup>(`/leads/${lead.id}/followups`, {
         method: "POST",
@@ -258,16 +276,20 @@ export default function LeadDetailPage() {
         body: followup,
       });
       setFollowups((prev) => sortFollowups([...prev, created]));
+    } catch (err) {
+      setRelatedError(getErrorMessage(err));
+      throw err;
     } finally {
       setIsSavingFollowup(false);
     }
   };
 
   const toggleFollowup = async (followup: LeadFollowup) => {
-    if (!token || !lead) return;
+    if (!lead) return;
+    if (isFollowupComplete(followup)) return;
 
-    const completed = !isFollowupComplete(followup);
     setUpdatingFollowupId(followup.id);
+    setRelatedError("");
 
     try {
       const updated = await apiRequest<LeadFollowup>(
@@ -275,29 +297,28 @@ export default function LeadDetailPage() {
         {
           method: "PATCH",
           token,
-          body: {
-            completed,
-            status: completed ? "completed" : "open",
-          },
         }
       );
       setFollowups((prev) =>
         sortFollowups(prev.map((item) => (item.id === followup.id ? updated : item)))
       );
+    } catch (err) {
+      setRelatedError(getErrorMessage(err));
     } finally {
       setUpdatingFollowupId(null);
     }
   };
 
   return (
-    <AppShell section="Lead Detail">
+    <ProtectedRoute>
+      <AppShell section="Lead Detail">
       <main className="mx-auto max-w-[1400px] space-y-7 px-6 py-8">
         <PageHeader
           eyebrow="CRM Detail"
-          title={lead ? lead.company : "Lead Detail"}
+          title={lead ? displayCompany(lead.company) : "Lead Detail"}
           description={
             lead
-              ? `${lead.full_name} - ${lead.email}`
+              ? `${lead.full_name} - ${displayEmail(lead.email)}`
               : "Review and update the selected lead."
           }
           aside={
@@ -407,7 +428,8 @@ export default function LeadDetailPage() {
           </>
         )}
       </main>
-    </AppShell>
+      </AppShell>
+    </ProtectedRoute>
   );
 }
 

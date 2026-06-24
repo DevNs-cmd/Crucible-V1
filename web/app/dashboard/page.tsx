@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ProtectedRoute } from "@/app/components/ProtectedRoute";
 import { AppShell } from "@/app/components/AppShell";
 import { PageHeader } from "@/app/components/PageHeader";
 import { FollowupsWidget } from "@/app/dashboard/components/FollowupsWidget";
@@ -19,16 +20,22 @@ import type {
 } from "@/app/dashboard/components/dashboard-types";
 import {
   apiRequest,
+  type DashboardStats,
   type Lead,
   type LeadFollowup,
   type LeadMeeting,
+  type LeadsByStatus,
+  type RevenueByMonth,
 } from "@/app/lib/api";
-import { getErrorMessage } from "@/app/lib/crm";
+import { displayCompany, getErrorMessage } from "@/app/lib/crm";
 import { useAuth } from "@/app/providers/auth-provider";
 
 export default function DashboardPage() {
   const { token, status: authStatus } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [statusCounts, setStatusCounts] = useState<LeadsByStatus[]>([]);
+  const [revenue, setRevenue] = useState<RevenueByMonth[]>([]);
   const [meetings, setMeetings] = useState<DashboardMeeting[]>([]);
   const [followups, setFollowups] = useState<DashboardFollowup[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -37,8 +44,9 @@ export default function DashboardPage() {
   const [lastRefreshed, setLastRefreshed] = useState("");
 
   useEffect(() => {
-    setLastRefreshed(new Date().toLocaleString("en-US"));
     if (authStatus !== "authenticated" || !token) return;
+
+    setLastRefreshed(new Date().toLocaleString("en-US"));
 
     let active = true;
 
@@ -48,9 +56,18 @@ export default function DashboardPage() {
       setRelatedError("");
 
       try {
-        const leadData = await apiRequest<Lead[]>("/leads?limit=250", { token });
+        const [dashboardStats, leadStatusCounts, monthlyRevenue, leadData] =
+          await Promise.all([
+            apiRequest<DashboardStats>("/analytics/dashboard", { token }),
+            apiRequest<LeadsByStatus[]>("/analytics/leads-by-status", { token }),
+            apiRequest<RevenueByMonth[]>("/analytics/revenue", { token }),
+            apiRequest<Lead[]>("/leads?limit=250", { token }),
+          ]);
         if (!active) return;
 
+        setStats(dashboardStats);
+        setStatusCounts(leadStatusCounts);
+        setRevenue(monthlyRevenue);
         setLeads(leadData);
 
         if (leadData.length === 0) {
@@ -69,7 +86,7 @@ export default function DashboardPage() {
               return items.map((meeting) => ({
                 ...meeting,
                 leadId: lead.id,
-                leadCompany: lead.company,
+                leadCompany: displayCompany(lead.company),
                 leadContact: lead.full_name,
               }));
             })
@@ -83,7 +100,7 @@ export default function DashboardPage() {
               return items.map((followup) => ({
                 ...followup,
                 leadId: lead.id,
-                leadCompany: lead.company,
+                leadCompany: displayCompany(lead.company),
                 leadContact: lead.full_name,
               }));
             })
@@ -124,7 +141,8 @@ export default function DashboardPage() {
   }, [authStatus, token]);
 
   return (
-    <AppShell section="Dev Operations">
+    <ProtectedRoute>
+      <AppShell section="Dev Operations">
       <main className="mx-auto max-w-7xl space-y-8 px-6 py-8">
         <PageHeader
           eyebrow="Executive Dashboard"
@@ -156,11 +174,11 @@ export default function DashboardPage() {
           </p>
         )}
 
-        <MetricsGrid leads={leads} />
+        <MetricsGrid stats={stats} />
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <StatusDistribution leads={leads} />
-          <PipelineChart leads={leads} />
+          <StatusDistribution statusCounts={statusCounts} />
+          <PipelineChart revenue={revenue} />
         </div>
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
@@ -178,6 +196,7 @@ export default function DashboardPage() {
         <StaticSystemCards />
       </main>
     </AppShell>
+    </ProtectedRoute>
   );
 }
 

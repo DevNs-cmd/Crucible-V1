@@ -1,56 +1,46 @@
-import type { Lead } from "@/app/lib/api";
-import { formatCurrency, leadValue } from "@/app/lib/crm";
+import type { DashboardStats } from "@/app/lib/api";
+import { formatCurrency } from "@/app/lib/crm";
 
 interface MetricsGridProps {
-  leads: Lead[];
+  stats: DashboardStats | null;
 }
 
-export function MetricsGrid({ leads }: MetricsGridProps) {
-  const pipelineValue = leads.reduce((sum, lead) => sum + leadValue(lead), 0);
-  const wonValue = leads
-    .filter((lead) => lead.status === "closed_won")
-    .reduce((sum, lead) => sum + leadValue(lead), 0);
-  const lostValue = leads
-    .filter((lead) => lead.status === "closed_lost")
-    .reduce((sum, lead) => sum + leadValue(lead), 0);
-
+export function MetricsGrid({ stats }: MetricsGridProps) {
   const cards = [
     {
       label: "Total Leads",
-      value: String(leads.length),
-      detail: "From GET /api/leads",
+      value: String(stats?.totalLeads ?? 0),
+      detail: "From /api/analytics/dashboard",
       tone: "slate",
     },
     {
-      label: "Pipeline Value",
-      value: formatCurrency(pipelineValue),
-      detail: "All lead values",
+      label: "Active Leads",
+      value: String(stats?.activeLeads ?? 0),
+      detail: "Open pipeline",
       tone: "amber",
     },
     {
-      label: "Won Value",
-      value: formatCurrency(wonValue),
-      detail: "Closed won leads",
+      label: "Conversion Rate",
+      value: `${(stats?.conversionRate ?? 0).toFixed(1)}%`,
+      detail: `${stats?.closedWon ?? 0} won / ${stats?.totalLeads ?? 0} total`,
       tone: "emerald",
     },
     {
-      label: "Lost Value",
-      value: formatCurrency(lostValue),
-      detail: "Closed lost leads",
-      tone: "red",
-    },
-    // Static placeholder: backend endpoint not yet available
-    {
-      label: "Active AI Agents",
-      value: "7",
-      detail: "Static operations target",
+      label: "Pipeline Value",
+      value: formatCurrency(stats?.totalPipelineValue ?? 0),
+      detail: "Backend lead value sum",
       tone: "blue",
     },
-    // Static placeholder: backend endpoint not yet available
     {
-      label: "System Health Rate",
-      value: "99.2%",
-      detail: "Static status card",
+      label: "Closed Lost",
+      value: String(stats?.closedLost ?? 0),
+      detail: "Lost opportunities",
+      tone: "red",
+    },
+    {
+      label: "Overdue Follow-ups",
+      value: String(stats?.overdueFollowUps ?? 0),
+      detail: "Incomplete and past due",
       tone: "emerald",
     },
   ];

@@ -46,7 +46,7 @@ export function FollowupsWidget({ followups }: FollowupsWidgetProps) {
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-bold text-slate-900">
-                      {followup.title || "Follow-up"}
+                      {followup.description}
                     </p>
                     <p className="truncate text-xs text-slate-500">
                       {followup.leadCompany}
