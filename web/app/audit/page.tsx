@@ -46,7 +46,7 @@ export default function AuditPage() {
         <PageHeader
           eyebrow="Audit Generator"
           title="AI Readiness Audit"
-          description="Generate a structured report through the existing backend audit endpoint."
+          description="Gain actionable insights into your sales process health and identify optimization opportunities with AI-powered analysis."
         />
 
         {error && (
