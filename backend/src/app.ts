@@ -1,3 +1,4 @@
+import { idempotencyMiddleware } from './middleware/idempotency';
 import express from 'express';
 import morgan from 'morgan';
 import { corsMiddleware } from './middleware/cors';
@@ -12,6 +13,7 @@ const app = express();
 app.use(corsMiddleware);
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
+app.use(idempotencyMiddleware);
 
 // ─── Logger ───────────────────────────────────────────────────────────────────
 if (env.NODE_ENV !== 'test') {
