@@ -46,7 +46,7 @@ export default function ProposalsPage() {
           <PageHeader
             eyebrow="Proposal Generator"
             title="AI Sales Proposal"
-            description="Generate a structured proposal through the existing backend proposal endpoint."
+            description="Create professional, data-driven sales proposals instantly with AI-generated content tailored to your leads and opportunities."
           />
 
           {error && (

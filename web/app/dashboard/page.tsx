@@ -8,10 +8,6 @@ import { FollowupsWidget } from "@/app/dashboard/components/FollowupsWidget";
 import { MetricsGrid } from "@/app/dashboard/components/MetricsGrid";
 import { PipelineChart } from "@/app/dashboard/components/PipelineChart";
 import { RecentLeads } from "@/app/dashboard/components/RecentLeads";
-import { StaticActivityLog } from "@/app/dashboard/components/StaticActivityLog";
-import { StaticIntegrationStatus } from "@/app/dashboard/components/StaticIntegrationStatus";
-import { StaticSprintChecklist } from "@/app/dashboard/components/StaticSprintChecklist";
-import { StaticSystemCards } from "@/app/dashboard/components/StaticSystemCards";
 import { StatusDistribution } from "@/app/dashboard/components/StatusDistribution";
 import { UpcomingMeetings } from "@/app/dashboard/components/UpcomingMeetings";
 import type {
@@ -186,14 +182,6 @@ export default function DashboardPage() {
           <UpcomingMeetings meetings={meetings} />
           <FollowupsWidget followups={followups} />
         </div>
-
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <StaticSprintChecklist />
-          <StaticActivityLog />
-        </div>
-       {/*Commented out tracking components per layout feedback */}
-        {/*<StaticIntegrationStatus /> */}
-        {/*<StaticSystemCards />*/}
       </main>
     </AppShell>
     </ProtectedRoute>
