@@ -42,6 +42,18 @@ export const LeadFilterSchema = z.object({
   limit: z.string().optional(),
 });
 
+// ─── Activity Log ─────────────────────────────────────────────────────────────
+
+export const EntityTypeEnum = z.enum(['lead', 'note', 'meeting', 'followup', 'user']);
+
+export const ActivityLogFilterSchema = z.object({
+  entity_type: EntityTypeEnum.optional(),
+  entity_id: z.string().uuid('entity_id must be a valid UUID').optional(),
+  page: z.string().optional(),
+  limit: z.string().optional(),
+});
+
+
 // ─── Notes ───────────────────────────────────────────────────────────────────
 
 export const CreateNoteSchema = z.object({
@@ -146,3 +158,5 @@ export type GenerateAuditInput = z.infer<typeof GenerateAuditSchema>;
 export type AuditReport = z.infer<typeof AuditReportSchema>;
 export type GenerateProposalInput = z.infer<typeof GenerateProposalSchema>;
 export type Proposal = z.infer<typeof ProposalSchema>;
+export type ActivityLogFilterInput = z.infer<typeof ActivityLogFilterSchema>;
+

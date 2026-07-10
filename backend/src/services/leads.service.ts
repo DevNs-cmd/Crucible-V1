@@ -2,6 +2,8 @@ import { supabase } from '../config/database';
 import { Lead, LeadWithRelations, LeadStatus } from '../models/lead.model';
 import { CreateLeadInput, UpdateLeadInput } from '../utils/validators';
 import { PaginationParams } from '../utils/pagination';
+import { recordActivity } from './activityLog.service';
+
 
 export interface LeadFilters {
   status?: LeadStatus;
@@ -54,7 +56,7 @@ export async function getLeads(
 }
 
 /** Create a new lead. */
-export async function createLead(input: CreateLeadInput): Promise<Lead> {
+export async function createLead(input: CreateLeadInput, actorId?: string): Promise<Lead> {
   try {
     const { data, error } = await supabase
       .from('leads')
@@ -63,6 +65,16 @@ export async function createLead(input: CreateLeadInput): Promise<Lead> {
       .single();
 
     if (error) throw error;
+
+    recordActivity({
+      entity_type: 'lead',
+      entity_id: data.id,
+      action: 'create',
+      actor_id: actorId,
+      before_state: null,
+      after_state: data,
+    });
+
     return data as Lead;
   } catch (err) {
     console.warn('[Supabase Dev Fallback] Insertion failed, generating local mock lead object.');
@@ -84,6 +96,16 @@ export async function createLead(input: CreateLeadInput): Promise<Lead> {
     };
     
     mockLeadsStore.push(newLead);
+
+    recordActivity({
+      entity_type: 'lead',
+      entity_id: newLead.id,
+      action: 'create',
+      actor_id: actorId,
+      before_state: null,
+      after_state: newLead,
+    });
+
     return newLead;
   }
 }
@@ -108,8 +130,15 @@ export async function getLeadById(id: string): Promise<LeadWithRelations> {
 }
 
 /** Partial update of lead fields. */
-export async function updateLead(id: string, input: UpdateLeadInput): Promise<Lead> {
+export async function updateLead(id: string, input: UpdateLeadInput, actorId?: string): Promise<Lead> {
   try {
+    const { data: beforeState } = await supabase
+      .from('leads')
+      .select('*')
+      .eq('id', id)
+      .is('deleted_at', null)
+      .single();
+
     const { data, error } = await supabase
       .from('leads')
       .update({ ...input, updated_at: new Date().toISOString() })
@@ -119,23 +148,47 @@ export async function updateLead(id: string, input: UpdateLeadInput): Promise<Le
       .single();
 
     if (error || !data) throw new Error('Lead not found');
+
+    recordActivity({
+      entity_type: 'lead',
+      entity_id: id,
+      action: 'update',
+      actor_id: actorId,
+      before_state: beforeState,
+      after_state: data,
+    });
+
     return data as Lead;
   } catch (err) {
     const index = mockLeadsStore.findIndex(l => l.id === id && !l.deleted_at);
     if (index === -1) throw Object.assign(new Error('Lead not found in memory'), { status: 404 });
     
+    const beforeState = { ...mockLeadsStore[index]! };
+
     mockLeadsStore[index] = {
       ...mockLeadsStore[index]!,
       ...input,
       status: (input.status as LeadStatus) ?? mockLeadsStore[index]!.status,
       updated_at: new Date().toISOString()
     };
-    return mockLeadsStore[index]!;
+
+    const afterState = mockLeadsStore[index]!;
+
+    recordActivity({
+      entity_type: 'lead',
+      entity_id: id,
+      action: 'update',
+      actor_id: actorId,
+      before_state: beforeState,
+      after_state: afterState,
+    });
+
+    return afterState;
   }
 }
 
 /** Soft delete — sets deleted_at timestamp. */
-export async function deleteLead(id: string): Promise<void> {
+export async function deleteLead(id: string, actorId?: string): Promise<void> {
   try {
     const { error } = await supabase
       .from('leads')
@@ -144,17 +197,36 @@ export async function deleteLead(id: string): Promise<void> {
       .is('deleted_at', null);
 
     if (error) throw new Error('Lead not found');
+
+    recordActivity({
+      entity_type: 'lead',
+      entity_id: id,
+      action: 'delete',
+      actor_id: actorId,
+      before_state: { id },
+      after_state: null,
+    });
   } catch (err) {
     const index = mockLeadsStore.findIndex(l => l.id === id && !l.deleted_at);
     if (index === -1) throw Object.assign(new Error('Lead not found in memory'), { status: 404 });
     mockLeadsStore[index]!.deleted_at = new Date().toISOString();
+
+    recordActivity({
+      entity_type: 'lead',
+      entity_id: id,
+      action: 'delete',
+      actor_id: actorId,
+      before_state: { id },
+      after_state: null,
+    });
   }
 }
 
 /** Update only the lead status. Returns updated lead and previous status. */
 export async function updateLeadStatus(
   id: string,
-  newStatus: LeadStatus
+  newStatus: LeadStatus,
+  actorId?: string
 ): Promise<{ lead: Lead; oldStatus: LeadStatus }> {
   try {
     const { data: current, error: fetchError } = await supabase
@@ -176,6 +248,16 @@ export async function updateLeadStatus(
       .single();
 
     if (error || !data) throw new Error('Status update failed');
+
+    recordActivity({
+      entity_type: 'lead',
+      entity_id: id,
+      action: 'status_change',
+      actor_id: actorId,
+      before_state: { status: oldStatus },
+      after_state: { status: newStatus },
+    });
+
     return { lead: data as Lead, oldStatus };
   } catch (err) {
     const index = mockLeadsStore.findIndex(l => l.id === id && !l.deleted_at);
@@ -184,6 +266,15 @@ export async function updateLeadStatus(
     const oldStatus = mockLeadsStore[index]!.status;
     mockLeadsStore[index]!.status = newStatus;
     mockLeadsStore[index]!.updated_at = new Date().toISOString();
+
+    recordActivity({
+      entity_type: 'lead',
+      entity_id: id,
+      action: 'status_change',
+      actor_id: actorId,
+      before_state: { status: oldStatus },
+      after_state: { status: newStatus },
+    });
     
     return { lead: mockLeadsStore[index]!, oldStatus };
   }

@@ -8,6 +8,7 @@ import auditRoutes from './audit.routes';
 import proposalRoutes from './proposal.routes';
 import analyticsRoutes from './analytics.routes';
 import webhooksRoutes from './webhooks.routes';
+import activityLogRoutes from './activityLog.routes';
 
 const router = Router();
 
@@ -20,5 +21,7 @@ router.use('/audit', auditRoutes);
 router.use('/proposals', proposalRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/webhooks', webhooksRoutes);
+router.use('/activity-log', activityLogRoutes);
+
 
 export default router;

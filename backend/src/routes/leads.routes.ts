@@ -11,5 +11,7 @@ router.get('/:id', LeadsController.getLeadById);
 router.put('/:id', LeadsController.updateLead);
 router.delete('/:id', LeadsController.deleteLead);
 router.patch('/:id/status', LeadsController.updateLeadStatus);
+router.get('/:id/activity', LeadsController.getLeadActivity);
+
 
 export default router;

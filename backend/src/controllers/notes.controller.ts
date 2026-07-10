@@ -27,7 +27,7 @@ export async function createNote(req: Request, res: Response, next: NextFunction
 /** DELETE /api/leads/:id/notes/:noteId */
 export async function deleteNote(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    await NotesService.deleteNote(req.params['id']!, req.params['noteId']!);
+    await NotesService.deleteNote(req.params['id']!, req.params['noteId']!, req.user!.userId);
     sendSuccess(res, null, 'Note deleted');
   } catch (err) { next(err); }
 }

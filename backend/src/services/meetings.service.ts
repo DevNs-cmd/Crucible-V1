@@ -1,6 +1,7 @@
 import { supabase } from '../config/database';
 import { Meeting } from '../models/meeting.model';
 import { CreateMeetingInput } from '../utils/validators';
+import { recordActivity } from './activityLog.service';
 
 /** All meetings for a lead, newest first. */
 export async function getMeetingsByLeadId(leadId: string): Promise<Meeting[]> {
@@ -34,5 +35,16 @@ export async function createMeeting(
     .single();
 
   if (error) throw Object.assign(new Error(error.message), { status: 400 });
+
+  recordActivity({
+    entity_type: 'meeting',
+    entity_id: data.id,
+    action: 'create',
+    actor_id: userId,
+    before_state: null,
+    after_state: data,
+  });
+
   return data as Meeting;
 }
+

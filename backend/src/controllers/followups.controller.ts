@@ -27,7 +27,7 @@ export async function createFollowUp(req: Request, res: Response, next: NextFunc
 /** PATCH /api/leads/:id/followups/:fid */
 export async function completeFollowUp(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const followup = await FollowUpsService.completeFollowUp(req.params['id']!, req.params['fid']!);
+    const followup = await FollowUpsService.completeFollowUp(req.params['id']!, req.params['fid']!, req.user!.userId);
     sendSuccess(res, followup, 'Follow-up completed');
   } catch (err) { next(err); }
 }

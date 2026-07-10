@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import * as LeadsService from '../services/leads.service';
 import * as AutomationService from '../services/automation.service';
+import * as ActivityLogService from '../services/activityLog.service';
 import {
   CreateLeadSchema, UpdateLeadSchema, UpdateLeadStatusSchema, LeadFilterSchema,
 } from '../utils/validators';
@@ -39,7 +40,7 @@ export async function createLead(req: Request, res: Response, next: NextFunction
       sendError(res, 'Validation failed', 422, parsed.error.flatten().fieldErrors);
       return;
     }
-    const lead = await LeadsService.createLead(parsed.data);
+    const lead = await LeadsService.createLead(parsed.data, req.user!.userId);
     try{
      await AutomationService.triggerNewLeadWebhook({
       leadId: lead.id,
@@ -91,7 +92,7 @@ export async function updateLead(req: Request, res: Response, next: NextFunction
       }
     }
 
-    const lead = await LeadsService.updateLead(req.params['id']!, parsed.data);
+    const lead = await LeadsService.updateLead(req.params['id']!, parsed.data, req.user!.userId);
     sendSuccess(res, lead, 'Lead updated');
   } catch (err) {
     next(err);
@@ -101,7 +102,7 @@ export async function updateLead(req: Request, res: Response, next: NextFunction
 /** DELETE /api/leads/:id */
 export async function deleteLead(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    await LeadsService.deleteLead(req.params['id']!);
+    await LeadsService.deleteLead(req.params['id']!, req.user!.userId);
     sendSuccess(res, null, 'Lead deleted');
   } catch (err) {
     next(err);
@@ -131,7 +132,7 @@ export async function updateLeadStatus(req: Request, res: Response, next: NextFu
       return;
     }
 
-    const { lead, oldStatus } = await LeadsService.updateLeadStatus(req.params['id']!, nextStatus);
+    const { lead, oldStatus } = await LeadsService.updateLeadStatus(req.params['id']!, nextStatus, req.user!.userId);
     AutomationService.triggerStatusChangeWebhook({
       leadId: lead.id,
       leadName: lead.full_name,
@@ -142,6 +143,20 @@ export async function updateLeadStatus(req: Request, res: Response, next: NextFu
       changedAt: new Date().toISOString(),
     });
     sendSuccess(res, lead, 'Status updated');
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** GET /api/leads/:id/activity */
+export async function getLeadActivity(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { id } = req.params;
+    const { logs } = await ActivityLogService.getActivityLogs({
+      entity_type: 'lead',
+      entity_id: id,
+    });
+    sendSuccess(res, logs, 'Lead activity logs fetched');
   } catch (err) {
     next(err);
   }

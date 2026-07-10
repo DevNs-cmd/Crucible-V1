@@ -32,10 +32,10 @@ export async function idempotencyMiddleware(req: Request, res: Response, next: N
   try {
     // In-memory mock clients use callbacks, so we wrap them cleanly in promises
     const getLock = (): Promise<string | null> => 
-      new Promise((resolve) => redis.get(lockKey, (err: any, reply: any) => resolve(reply)));
+      new Promise((resolve) => redis.get(lockKey, (_err: any, reply: any) => resolve(reply)));
 
     const getResponse = (): Promise<string | null> => 
-      new Promise((resolve) => redis.get(responseKey, (err: any, reply: any) => resolve(reply)));
+      new Promise((resolve) => redis.get(responseKey, (_err: any, reply: any) => resolve(reply)));
 
     const cachedResponse = await getResponse();
     if (cachedResponse) {
