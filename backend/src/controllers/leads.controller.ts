@@ -7,6 +7,7 @@ import {
 import { sendSuccess, sendError } from '../utils/response';
 import { getPagination } from '../utils/pagination';
 import { LeadStatus } from '../models/lead.model';
+import { isValidTransition } from '../utils/statemachine'; // Imported the state machine utility
 
 /** GET /api/leads */
 export async function getLeads(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -39,7 +40,8 @@ export async function createLead(req: Request, res: Response, next: NextFunction
       return;
     }
     const lead = await LeadsService.createLead(parsed.data);
-    AutomationService.triggerNewLeadWebhook({
+    try{
+     await AutomationService.triggerNewLeadWebhook({
       leadId: lead.id,
       leadName: lead.full_name,
       company: lead.company,
@@ -47,6 +49,9 @@ export async function createLead(req: Request, res: Response, next: NextFunction
       assignedTo: lead.assigned_to,
       createdAt: lead.created_at,
     });
+  } catch (webhookError){
+    console.warn('[Webhook Warning] Failed to trigger new lead webhook:', webhookError);
+  }
     sendSuccess(res, lead, 'Lead created', 201);
   } catch (err) {
     next(err);
@@ -71,6 +76,21 @@ export async function updateLead(req: Request, res: Response, next: NextFunction
       sendError(res, 'Validation failed', 422, parsed.error.flatten().fieldErrors);
       return;
     }
+
+    // STATE MACHINE INTEGRATION: If a status change is requested, validate it
+    if (parsed.data.status) {
+      const currentLead = await LeadsService.getLeadById(req.params['id']!);
+      if (!isValidTransition(currentLead.status, parsed.data.status as LeadStatus)) {
+        sendError(
+          res, 
+          'Invalid Status Transition', 
+          400, 
+          { status: [`Cannot transition lead status directly from '${currentLead.status}' to '${parsed.data.status}'`] }
+        );
+        return;
+      }
+    }
+
     const lead = await LeadsService.updateLead(req.params['id']!, parsed.data);
     sendSuccess(res, lead, 'Lead updated');
   } catch (err) {
@@ -96,13 +116,28 @@ export async function updateLeadStatus(req: Request, res: Response, next: NextFu
       sendError(res, 'Validation failed', 422, parsed.error.flatten().fieldErrors);
       return;
     }
-    const { lead, oldStatus } = await LeadsService.updateLeadStatus(req.params['id']!, parsed.data.status);
+
+    // STATE MACHINE INTEGRATION: Enforce strict transitions on direct updates
+    const currentLead = await LeadsService.getLeadById(req.params['id']!);
+    const nextStatus = parsed.data.status as LeadStatus;
+
+    if (!isValidTransition(currentLead.status, nextStatus)) {
+      sendError(
+        res, 
+        'Invalid Status Transition', 
+        400, 
+        { status: [`The workflow ruleset forbids transitioning from '${currentLead.status}' directly to '${nextStatus}'`] }
+      );
+      return;
+    }
+
+    const { lead, oldStatus } = await LeadsService.updateLeadStatus(req.params['id']!, nextStatus);
     AutomationService.triggerStatusChangeWebhook({
       leadId: lead.id,
       leadName: lead.full_name,
       company: lead.company,
       oldStatus,
-      newStatus: parsed.data.status,
+      newStatus: nextStatus,
       changedBy: req.user!.userId,
       changedAt: new Date().toISOString(),
     });
