@@ -1,0 +1,63 @@
+import { ExecutionIntent, ExecutionState } from '../models/execution.model';
+import { validateExecutionTransition } from '../utils/executionValidator';
+
+// In-memory array acting as our local execution store
+const mockExecutionStore: ExecutionIntent[] = [];
+
+/**
+ * Initializes a brand new background task intent in the PENDING state.
+ */
+export async function createExecutionIntent(taskName: string, payload: Record<string, any>): Promise<ExecutionIntent> {
+  const newIntent: ExecutionIntent = {
+    id: `intent-id-${Date.now()}`,
+    task_name: taskName,
+    state: 'PENDING',
+    payload,
+    error_message: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  mockExecutionStore.push(newIntent);
+  console.log(`[Execution Engine] Created intent ${newIntent.id} (${taskName}) -> PENDING`);
+  return newIntent;
+}
+
+/**
+ * Safely advances an execution intent's status using our state machine guard rules.
+ */
+export async function updateExecutionState(
+  id: string,
+  nextState: ExecutionState,
+  errorMessage?: string | null
+): Promise<ExecutionIntent> {
+  const intent = mockExecutionStore.find((i) => i.id === id);
+  if (!intent) {
+    throw Object.assign(new Error('Execution Intent not found'), { status: 404 });
+  }
+
+  // Enforce state machine rules before committing changes
+  const validation = validateExecutionTransition(intent.state, nextState);
+  if (!validation.isValid) {
+    throw Object.assign(new Error(validation.message), { status: 400 });
+  }
+
+  // Update intent values if the transition passes validation
+  intent.state = nextState;
+  intent.error_message = errorMessage ?? null;
+  intent.updated_at = new Date().toISOString();
+
+  console.log(`[Execution Engine] Transitioned ${id} to -> ${nextState}`);
+  return intent;
+}
+
+/**
+ * Retrieves a single execution intent by ID.
+ */
+export async function getExecutionIntentById(id: string): Promise<ExecutionIntent> {
+  const intent = mockExecutionStore.find((i) => i.id === id);
+  if (!intent) {
+    throw Object.assign(new Error('Execution Intent not found'), { status: 404 });
+  }
+  return intent;
+}
