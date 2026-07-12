@@ -1,8 +1,8 @@
 import { ExecutionIntent, ExecutionState } from '../models/execution.model';
 import { validateExecutionTransition } from '../utils/executionValidator';
 
-// In-memory array acting as our local execution store
-const mockExecutionStore: ExecutionIntent[] = [];
+// 1. Notice the "export" keyword here to make it accessible to the interceptor
+export const mockExecutionStore: ExecutionIntent[] = [];
 
 /**
  * Initializes a brand new background task intent in the PENDING state.
@@ -36,13 +36,11 @@ export async function updateExecutionState(
     throw Object.assign(new Error('Execution Intent not found'), { status: 404 });
   }
 
-  // Enforce state machine rules before committing changes
   const validation = validateExecutionTransition(intent.state, nextState);
   if (!validation.isValid) {
     throw Object.assign(new Error(validation.message), { status: 400 });
   }
 
-  // Update intent values if the transition passes validation
   intent.state = nextState;
   intent.error_message = errorMessage ?? null;
   intent.updated_at = new Date().toISOString();
