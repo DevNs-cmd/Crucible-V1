@@ -1,3 +1,4 @@
+import { initCRMEventListeners } from './services/crmEventHandlers';
 import './config/env'; // validate env at startup — crash early if invalid
 import cron from 'node-cron';
 import app from './app';
@@ -43,6 +44,8 @@ const server = app.listen(PORT, () => {
 ║     AlgoForce AI Backend             ║
 ║     Port: ${PORT}  Env: ${env.NODE_ENV.padEnd(11)}║
 ╚══════════════════════════════════════╝`);
+  initCRMEventListeners();
+  
   registerCronJobs();
 });
 

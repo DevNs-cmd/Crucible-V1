@@ -1,5 +1,6 @@
 import { ExecutionIntent, ExecutionState } from '../models/execution.model';
 import { validateExecutionTransition } from '../utils/executionValidator';
+import { eventBroker } from '../utils/eventBroker';
 
 // 1. Notice the "export" keyword here to make it accessible to the interceptor
 export const mockExecutionStore: ExecutionIntent[] = [];
@@ -41,11 +42,24 @@ export async function updateExecutionState(
     throw Object.assign(new Error(validation.message), { status: 400 });
   }
 
+  // Capture the old state before mutating it
+  const oldState = intent.state;
+
   intent.state = nextState;
   intent.error_message = errorMessage ?? null;
   intent.updated_at = new Date().toISOString();
 
   console.log(`[Execution Engine] Transitioned ${id} to -> ${nextState}`);
+
+  // 📢 Publish the Event asynchronously to the architecture stream
+  // We don't 'await' it so it fires in the background without blocking the HTTP response thread
+  eventBroker.publish('lead.updated', {
+    leadId: id,
+    oldState: oldState,
+    newState: nextState,
+    context: 'Execution State Machine'
+  }).catch((err) => console.error('[Event Broker Trigger Error]:', err));
+
   return intent;
 }
 
