@@ -9,6 +9,7 @@ import proposalRoutes from './proposal.routes';
 import analyticsRoutes from './analytics.routes';
 import webhooksRoutes from './webhooks.routes';
 import activityLogRoutes from './activityLog.routes';
+import executionRoutes from './execution.routes'; 
 
 const router = Router();
 
@@ -22,6 +23,6 @@ router.use('/proposals', proposalRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/webhooks', webhooksRoutes);
 router.use('/activity-log', activityLogRoutes);
-
+router.use('/executions', executionRoutes);
 
 export default router;
