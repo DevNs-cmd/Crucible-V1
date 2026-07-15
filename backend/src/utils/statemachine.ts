@@ -2,12 +2,12 @@ import { LeadStatus } from '../models/lead.model';
 
 // Explicitly define which statuses are allowed to move to which statuses
 export const VALID_LEAD_TRANSITIONS: Record<LeadStatus, LeadStatus[]> = {
-  new: ['contacted', 'closed_lost'],
-  contacted: ['new', 'proposal', 'closed_lost'],
-  proposal: ['contacted', 'negotiation', 'closed_lost'],
-  negotiation: ['proposal', 'closed_won', 'closed_lost'],
-  closed_won: ['contacted'], // Can re-open to contacted if new upsell or scope changes
-  closed_lost: ['new', 'contacted'], // Can re-open if lead re-engages
+  new:          ['contacted', 'closed_lost'],
+  contacted:    ['proposal', 'closed_lost'],
+  proposal:     ['negotiation', 'closed_lost'],
+  negotiation:  ['closed_won', 'closed_lost'],
+  closed_won:   [],   // terminal — no transitions out
+  closed_lost:  [],   // terminal — no transitions out
 };
 
 /**
@@ -15,8 +15,8 @@ export const VALID_LEAD_TRANSITIONS: Record<LeadStatus, LeadStatus[]> = {
  * @returns true if valid, false otherwise.
  */
 export function isValidTransition(currentStatus: LeadStatus, nextStatus: LeadStatus): boolean {
-  // If the status isn't actually changing, it's always valid
-  if (currentStatus === nextStatus) return true;
+  // A no-op (currentStatus === nextStatus) should NOT be treated as automatically valid — return false
+  if (currentStatus === nextStatus) return false;
 
   const allowedTransitions = VALID_LEAD_TRANSITIONS[currentStatus];
   return allowedTransitions ? allowedTransitions.includes(nextStatus) : false;

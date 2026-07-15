@@ -3,6 +3,7 @@ import { Lead, LeadWithRelations, LeadStatus } from '../models/lead.model';
 import { CreateLeadInput, UpdateLeadInput } from '../utils/validators';
 import { PaginationParams } from '../utils/pagination';
 import { recordActivity } from './activityLog.service';
+import { isValidTransition, VALID_LEAD_TRANSITIONS } from '../utils/statemachine';
 
 
 export interface LeadFilters {
@@ -139,6 +140,18 @@ export async function updateLead(id: string, input: UpdateLeadInput, actorId?: s
       .is('deleted_at', null)
       .single();
 
+    if (!beforeState) throw new Error('Lead not found');
+
+    if (input.status && input.status !== beforeState.status) {
+      if (!isValidTransition(beforeState.status as LeadStatus, input.status as LeadStatus)) {
+        const allowed = VALID_LEAD_TRANSITIONS[beforeState.status as LeadStatus] || [];
+        const msg = allowed.length > 0
+          ? `Invalid status transition from '${beforeState.status}' to '${input.status}'. Valid next states: ${allowed.join(', ')}`
+          : `terminal state, no further transitions allowed`;
+        throw Object.assign(new Error(msg), { status: 409 });
+      }
+    }
+
     const { data, error } = await supabase
       .from('leads')
       .update({ ...input, updated_at: new Date().toISOString() })
@@ -160,10 +173,21 @@ export async function updateLead(id: string, input: UpdateLeadInput, actorId?: s
 
     return data as Lead;
   } catch (err) {
+    if (err && (err as any).status === 409) throw err;
     const index = mockLeadsStore.findIndex(l => l.id === id && !l.deleted_at);
     if (index === -1) throw Object.assign(new Error('Lead not found in memory'), { status: 404 });
     
     const beforeState = { ...mockLeadsStore[index]! };
+
+    if (input.status && input.status !== beforeState.status) {
+      if (!isValidTransition(beforeState.status as LeadStatus, input.status as LeadStatus)) {
+        const allowed = VALID_LEAD_TRANSITIONS[beforeState.status as LeadStatus] || [];
+        const msg = allowed.length > 0
+          ? `Invalid status transition from '${beforeState.status}' to '${input.status}'. Valid next states: ${allowed.join(', ')}`
+          : `terminal state, no further transitions allowed`;
+        throw Object.assign(new Error(msg), { status: 409 });
+      }
+    }
 
     mockLeadsStore[index] = {
       ...mockLeadsStore[index]!,
@@ -240,6 +264,14 @@ export async function updateLeadStatus(
 
     const oldStatus = current.status as LeadStatus;
 
+    if (!isValidTransition(oldStatus, newStatus)) {
+      const allowed = VALID_LEAD_TRANSITIONS[oldStatus] || [];
+      const msg = allowed.length > 0
+        ? `Invalid status transition from '${oldStatus}' to '${newStatus}'. Valid next states: ${allowed.join(', ')}`
+        : `terminal state, no further transitions allowed`;
+      throw Object.assign(new Error(msg), { status: 409 });
+    }
+
     const { data, error } = await supabase
       .from('leads')
       .update({ status: newStatus, updated_at: new Date().toISOString() })
@@ -260,10 +292,20 @@ export async function updateLeadStatus(
 
     return { lead: data as Lead, oldStatus };
   } catch (err) {
+    if (err && (err as any).status === 409) throw err;
     const index = mockLeadsStore.findIndex(l => l.id === id && !l.deleted_at);
     if (index === -1) throw Object.assign(new Error('Lead not found in memory'), { status: 404 });
     
     const oldStatus = mockLeadsStore[index]!.status;
+
+    if (!isValidTransition(oldStatus, newStatus)) {
+      const allowed = VALID_LEAD_TRANSITIONS[oldStatus] || [];
+      const msg = allowed.length > 0
+        ? `Invalid status transition from '${oldStatus}' to '${newStatus}'. Valid next states: ${allowed.join(', ')}`
+        : `terminal state, no further transitions allowed`;
+      throw Object.assign(new Error(msg), { status: 409 });
+    }
+
     mockLeadsStore[index]!.status = newStatus;
     mockLeadsStore[index]!.updated_at = new Date().toISOString();
 

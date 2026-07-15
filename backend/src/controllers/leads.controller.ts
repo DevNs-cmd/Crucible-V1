@@ -8,7 +8,6 @@ import {
 import { sendSuccess, sendError } from '../utils/response';
 import { getPagination } from '../utils/pagination';
 import { LeadStatus } from '../models/lead.model';
-import { isValidTransition } from '../utils/statemachine'; // Imported the state machine utility
 
 /** GET /api/leads */
 export async function getLeads(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -78,20 +77,6 @@ export async function updateLead(req: Request, res: Response, next: NextFunction
       return;
     }
 
-    // STATE MACHINE INTEGRATION: If a status change is requested, validate it
-    if (parsed.data.status) {
-      const currentLead = await LeadsService.getLeadById(req.params['id']!);
-      if (!isValidTransition(currentLead.status, parsed.data.status as LeadStatus)) {
-        sendError(
-          res, 
-          'Invalid Status Transition', 
-          400, 
-          { status: [`Cannot transition lead status directly from '${currentLead.status}' to '${parsed.data.status}'`] }
-        );
-        return;
-      }
-    }
-
     const lead = await LeadsService.updateLead(req.params['id']!, parsed.data, req.user!.userId);
     sendSuccess(res, lead, 'Lead updated');
   } catch (err) {
@@ -118,19 +103,7 @@ export async function updateLeadStatus(req: Request, res: Response, next: NextFu
       return;
     }
 
-    // STATE MACHINE INTEGRATION: Enforce strict transitions on direct updates
-    const currentLead = await LeadsService.getLeadById(req.params['id']!);
     const nextStatus = parsed.data.status as LeadStatus;
-
-    if (!isValidTransition(currentLead.status, nextStatus)) {
-      sendError(
-        res, 
-        'Invalid Status Transition', 
-        400, 
-        { status: [`The workflow ruleset forbids transitioning from '${currentLead.status}' directly to '${nextStatus}'`] }
-      );
-      return;
-    }
 
     const { lead, oldStatus } = await LeadsService.updateLeadStatus(req.params['id']!, nextStatus, req.user!.userId);
     AutomationService.triggerStatusChangeWebhook({
