@@ -20,8 +20,8 @@ export interface ExecutionIntent {
  * This governs background tasks and engine processing states.
  */
 export const VALID_EXECUTION_TRANSITIONS: Record<ExecutionState, ExecutionState[]> = {
-  PENDING: ['IN_PROGRESS'],
-  IN_PROGRESS: ['COMPLETED', 'BLOCKED', 'FAILED'],
+  PENDING: ['IN_PROGRESS', 'ESCALATED'],
+  IN_PROGRESS: ['COMPLETED', 'BLOCKED', 'FAILED','ESCALATED'],
   BLOCKED: ['IN_PROGRESS', 'ESCALATED', 'FAILED'],
   FAILED: ['ESCALATED'], 
   COMPLETED: [], // Terminal state

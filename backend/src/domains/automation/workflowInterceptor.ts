@@ -7,7 +7,7 @@ import { mockExecutionStore } from '../automation/execution.service';
  */
 export const interceptWorkflowStateChange = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { id } = req.params;
-  const { state: targetState } = req.body;
+  const { state: targetState, proof } = req.body;
 
   // Locate the intent directly from the exported array
   const currentIntent = mockExecutionStore.find((i) => i.id === id);
@@ -21,7 +21,7 @@ export const interceptWorkflowStateChange = async (req: Request, res: Response, 
     return;
   }
 
-  // Business Rule: Block modifications to historical terminal states
+  // Business Rule 1: Block modifications to historical terminal states
   if (currentIntent.state === 'COMPLETED' || currentIntent.state === 'FAILED') {
     res.status(400).json({
       success: false,
@@ -31,6 +31,20 @@ export const interceptWorkflowStateChange = async (req: Request, res: Response, 
       }
     });
     return;
+  }
+
+  // Business Rule 2: Mandate Proof-of-Execution for COMPLETED transitions
+  if (targetState === 'COMPLETED') {
+    if (!proof || !proof.log || !proof.fileUrl || !proof.timestamp) {
+      res.status(400).json({
+        success: false,
+        error: "Workflow Interception Blocked Operation",
+        details: {
+          message: "Proof-of-Execution Requirement Failed: Transitioning to 'COMPLETED' strictly requires a proof payload containing 'log', 'fileUrl', and 'timestamp'."
+        }
+      });
+      return;
+    }
   }
 
   next();

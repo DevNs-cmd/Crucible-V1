@@ -6,6 +6,7 @@ import app from './app';
 import { env } from './config/env';
 import { getOverdueFollowUps } from './domains/crm/followups.service';
 import { triggerFollowUpReminderWebhook } from './domains/automation/automation.service';
+import { runSlaWatchdog } from './domains/automation/slaEngine';
 
 const PORT = env.PORT;
 
@@ -46,6 +47,8 @@ const server = app.listen(PORT, () => {
 ║     Port: ${PORT}  Env: ${env.NODE_ENV.padEnd(11)}║
 ╚══════════════════════════════════════╝`);
   initCRMEventListeners();
+
+  runSlaWatchdog();
   
   registerCronJobs();
 });
