@@ -1,10 +1,11 @@
-import { initCRMEventListeners } from './services/crmEventHandlers';
+import { initCRMEventListeners } from './domains/automation/crmEventHandlers';
 import './config/env'; // validate env at startup — crash early if invalid
+import './domains/automation/queues/aiJobs.worker';
 import cron from 'node-cron';
 import app from './app';
 import { env } from './config/env';
-import { getOverdueFollowUps } from './services/followups.service';
-import { triggerFollowUpReminderWebhook } from './services/automation.service';
+import { getOverdueFollowUps } from './domains/crm/followups.service';
+import { triggerFollowUpReminderWebhook } from './domains/automation/automation.service';
 
 const PORT = env.PORT;
 

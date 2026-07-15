@@ -1,5 +1,5 @@
 import { GenerateAuditSchema, AuditReportSchema } from '../../src/utils/validators';
-import { buildAuditUserPrompt, AUDIT_SYSTEM_PROMPT } from '../../src/prompts/audit.prompt';
+import { buildAuditUserPrompt, AUDIT_SYSTEM_PROMPT } from '../../src/domains/ai/prompts/audit.prompt';
 
 const validInput = {
   companyName: 'TechCorp',

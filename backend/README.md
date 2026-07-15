@@ -74,15 +74,20 @@ npm test
 | POST | `/api/leads/:id/followups` | ✅ | Create follow-up |
 | PATCH | `/api/leads/:id/followups/:fid` | ✅ | Mark as completed |
 
-### AI Audit (B2)
+### AI Audit (B2 - Asynchronous)
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| POST | `/api/audit/generate` | ✅ | Generate AI business audit report |
+| POST | `/api/audit/generate` | ✅ | Enqueue AI business audit report job (returns 202 with jobId) |
 
-### Proposals (B2)
+### Proposals (B2 - Asynchronous)
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| POST | `/api/proposals/generate` | ✅ | Generate AI sales proposal |
+| POST | `/api/proposals/generate` | ✅ | Enqueue AI sales proposal job (returns 202 with jobId) |
+
+### Background Jobs
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/jobs/:id` | ✅ | Retrieve the status and results of an AI generation job (owner or admin only) |
 
 ### Analytics (B4)
 | Method | Endpoint | Auth | Description |

@@ -1,5 +1,5 @@
 import { ActivityLogFilterSchema } from '../../src/utils/validators';
-import { recordActivity } from '../../src/services/activityLog.service';
+import { recordActivity } from '../../src/domains/activity-log/activityLog.service';
 import { supabase } from '../../src/config/database';
 
 jest.mock('../../src/config/database', () => ({

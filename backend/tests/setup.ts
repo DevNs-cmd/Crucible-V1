@@ -15,3 +15,13 @@ process.env['SMTP_USER'] = 'test@test.com';
 process.env['SMTP_PASS'] = 'test-smtp-pass';
 process.env['SMTP_FROM'] = 'AlgoForce Test <test@test.com>';
 process.env['ENABLE_CRON'] = 'false';
+
+// Global mock for BullMQ to prevent connection requests in tests
+jest.mock('bullmq', () => ({
+  Queue: jest.fn().mockImplementation(() => ({
+    add: jest.fn().mockResolvedValue({ id: 'bullmq-job-id' }),
+  })),
+  Worker: jest.fn().mockImplementation(() => ({
+    on: jest.fn(),
+  })),
+}));

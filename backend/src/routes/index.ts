@@ -1,15 +1,16 @@
 import { Router } from 'express';
-import authRoutes from './auth.routes';
-import leadsRoutes from './leads.routes';
-import notesRoutes from './notes.routes';
-import meetingsRoutes from './meetings.routes';
-import followupsRoutes from './followups.routes';
-import auditRoutes from './audit.routes';
-import proposalRoutes from './proposal.routes';
-import analyticsRoutes from './analytics.routes';
-import webhooksRoutes from './webhooks.routes';
-import activityLogRoutes from './activityLog.routes';
-import executionRoutes from './execution.routes'; 
+import authRoutes from '../domains/auth/auth.routes';
+import leadsRoutes from '../domains/crm/leads.routes';
+import notesRoutes from '../domains/crm/notes.routes';
+import meetingsRoutes from '../domains/crm/meetings.routes';
+import followupsRoutes from '../domains/crm/followups.routes';
+import auditRoutes from '../domains/ai/audit.routes';
+import proposalRoutes from '../domains/ai/proposal.routes';
+import analyticsRoutes from '../domains/analytics/analytics.routes';
+import webhooksRoutes from '../domains/automation/webhooks.routes';
+import activityLogRoutes from '../domains/activity-log/activityLog.routes';
+import executionRoutes from '../domains/automation/execution.routes'; 
+import jobsRoutes from '../domains/automation/jobs.routes';
 
 const router = Router();
 
@@ -24,5 +25,6 @@ router.use('/analytics', analyticsRoutes);
 router.use('/webhooks', webhooksRoutes);
 router.use('/activity-log', activityLogRoutes);
 router.use('/executions', executionRoutes);
+router.use('/jobs', jobsRoutes);
 
 export default router;

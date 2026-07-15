@@ -1,5 +1,5 @@
 import { isValidTransition } from '../../src/utils/statemachine';
-import { updateLeadStatus, updateLead } from '../../src/services/leads.service';
+import { updateLeadStatus, updateLead } from '../../src/domains/crm/leads.service';
 import { supabase } from '../../src/config/database';
 
 jest.mock('../../src/config/database', () => ({

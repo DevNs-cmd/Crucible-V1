@@ -1,5 +1,5 @@
 import { GenerateProposalSchema, ProposalSchema } from '../../src/utils/validators';
-import { buildProposalUserPrompt, PROPOSAL_SYSTEM_PROMPT } from '../../src/prompts/proposal.prompt';
+import { buildProposalUserPrompt, PROPOSAL_SYSTEM_PROMPT } from '../../src/domains/ai/prompts/proposal.prompt';
 
 const validInput = {
   companyName: 'Acme Corp',
