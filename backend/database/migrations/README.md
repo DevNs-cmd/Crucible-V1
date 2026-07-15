@@ -20,5 +20,5 @@ was numbered `002` which collided with `002_leads.sql`. Use `seeds/001_admin_use
 
 ## Adding new migrations
 
-Next number is **006**. Number sequentially, one concern per file, `CREATE ... IF NOT EXISTS`
+Next number is **007**. Number sequentially, one concern per file, `CREATE ... IF NOT EXISTS`
 everywhere so re-running a migration is a no-op rather than an error.

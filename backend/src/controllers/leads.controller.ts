@@ -152,11 +152,19 @@ export async function updateLeadStatus(req: Request, res: Response, next: NextFu
 export async function getLeadActivity(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { id } = req.params;
-    const { logs } = await ActivityLogService.getActivityLogs({
-      entity_type: 'lead',
-      entity_id: id,
+    const pagination = getPagination(req);
+    const { logs, total } = await ActivityLogService.getActivityLogs(
+      {
+        entity_type: 'lead',
+        entity_id: id,
+      },
+      pagination
+    );
+    sendSuccess(res, logs, 'Lead activity logs fetched', 200, {
+      page: pagination.page,
+      limit: pagination.limit,
+      total,
     });
-    sendSuccess(res, logs, 'Lead activity logs fetched');
   } catch (err) {
     next(err);
   }
