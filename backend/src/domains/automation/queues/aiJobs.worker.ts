@@ -1,7 +1,6 @@
 import { Worker } from 'bullmq';
 import { supabase } from '../../../config/database';
-import { generateAuditReport } from '../../ai/audit.service';
-import { generateProposal } from '../../ai/proposal.service';
+import { runAiPipeline } from '../../ai/pipeline';
 import { eventBroker } from '../eventBroker';
 import { connectionOptions } from './aiJobs.queue';
 
@@ -16,12 +15,19 @@ async function updateJobStatus(jobId: string, status: string) {
   }
 }
 
-async function updateJobSuccess(jobId: string, result: any) {
+async function updateJobSuccess(
+  jobId: string,
+  result: any,
+  confidenceScore: number,
+  criticNotes: string | null
+) {
   const { error } = await supabase
     .from('ai_jobs')
     .update({
       status: 'completed',
       result,
+      confidence_score: confidenceScore,
+      critic_notes: criticNotes,
       updated_at: new Date().toISOString(),
     })
     .eq('id', jobId);
@@ -55,27 +61,19 @@ export const aiJobsWorker = new Worker(
     // Update status to processing
     await updateJobStatus(jobId, 'processing');
 
-    if (job.name === 'audit') {
-      const result = await generateAuditReport(input, requestedBy);
-      await updateJobSuccess(jobId, result);
+    if (job.name === 'audit' || job.name === 'proposal') {
+      const type = job.name as 'audit' | 'proposal';
+      const { result, confidenceScore, criticNotes } = await runAiPipeline(type, input, requestedBy);
+      await updateJobSuccess(jobId, result, confidenceScore, criticNotes);
       
       // Publish completion event
       await eventBroker.publish('ai_job.completed', {
         jobId,
-        jobType: 'audit',
+        jobType: type,
         requestedBy,
         result,
-      });
-    } else if (job.name === 'proposal') {
-      const result = await generateProposal(input, requestedBy);
-      await updateJobSuccess(jobId, result);
-      
-      // Publish completion event
-      await eventBroker.publish('ai_job.completed', {
-        jobId,
-        jobType: 'proposal',
-        requestedBy,
-        result,
+        confidenceScore,
+        criticNotes,
       });
     }
   },
@@ -87,7 +85,7 @@ export const aiJobsWorker = new Worker(
 aiJobsWorker.on('failed', async (job, err) => {
   if (job) {
     const { jobId, requestedBy } = job.data;
-    console.error(`[Worker] Job ${job.id} failed after maximum retry attempts:`, err.message);
+    console.log(`[Worker] Job ${job.id} failed after maximum retry attempts:`, err.message);
     await updateJobFailure(jobId, err.message);
     // Publish failure event
     await eventBroker.publish('ai_job.failed', {

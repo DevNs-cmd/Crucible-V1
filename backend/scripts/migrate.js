@@ -135,6 +135,50 @@ CREATE TABLE IF NOT EXISTS proposal_logs (
 );
 `;
 
+const MIGRATION_005_INDEXES = `
+CREATE INDEX IF NOT EXISTS idx_audit_logs_requested_by   ON audit_logs(requested_by);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_generated_at   ON audit_logs(generated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_company_name   ON audit_logs(company_name);
+CREATE INDEX IF NOT EXISTS idx_proposal_logs_requested_by ON proposal_logs(requested_by);
+CREATE INDEX IF NOT EXISTS idx_proposal_logs_generated_at ON proposal_logs(generated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_proposal_logs_company_name ON proposal_logs(company_name);
+`;
+
+const MIGRATION_006_ACTIVITY_LOG = `
+CREATE TABLE IF NOT EXISTS activity_log (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  entity_type   TEXT NOT NULL CHECK (entity_type IN ('lead', 'note', 'meeting', 'followup', 'user')),
+  entity_id     UUID NOT NULL,
+  action        TEXT NOT NULL CHECK (action IN ('create', 'update', 'delete', 'status_change')),
+  actor_id      UUID REFERENCES users(id) ON DELETE SET NULL,
+  before_state  JSONB,
+  after_state   JSONB,
+  metadata      JSONB,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_activity_log_entity ON activity_log(entity_type, entity_id);
+CREATE INDEX IF NOT EXISTS idx_activity_log_created_at ON activity_log(created_at DESC);
+`;
+
+const MIGRATION_007_AI_JOBS = `
+CREATE TABLE IF NOT EXISTS ai_jobs (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  job_type     TEXT NOT NULL CHECK (job_type IN ('audit', 'proposal')),
+  status       TEXT NOT NULL CHECK (status IN ('queued', 'processing', 'completed', 'failed')),
+  input        JSONB NOT NULL,
+  result       JSONB,
+  error        TEXT,
+  requested_by UUID REFERENCES users(id) ON DELETE SET NULL,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+`;
+
+const MIGRATION_008_CONFIDENCE_CRITIC = `
+ALTER TABLE ai_jobs ADD COLUMN IF NOT EXISTS confidence_score INTEGER;
+ALTER TABLE ai_jobs ADD COLUMN IF NOT EXISTS critic_notes TEXT;
+`;
+
 // ─── Main ──────────────────────────────────────────────────────────────────────
 
 async function run() {
@@ -153,6 +197,10 @@ async function run() {
       { name: '002 — leads table',                    sql: MIGRATION_002_LEADS },
       { name: '003 — notes, meetings, followups',     sql: MIGRATION_003_NOTES_MEETINGS_FOLLOWUPS },
       { name: '004 — audit_logs, proposal_logs',      sql: MIGRATION_004_LOGS },
+      { name: '005 — log indexes',                    sql: MIGRATION_005_INDEXES },
+      { name: '006 — activity_log table',             sql: MIGRATION_006_ACTIVITY_LOG },
+      { name: '007 — ai_jobs table',                  sql: MIGRATION_007_AI_JOBS },
+      { name: '008 — confidence and critic columns',  sql: MIGRATION_008_CONFIDENCE_CRITIC },
       {
         name: 'SEED — admin user (admin@algoforce.ai / Admin@123)',
         sql: `
@@ -177,7 +225,7 @@ async function run() {
       ORDER BY tablename;
     `);
     const tables = rows.map(r => r.tablename);
-    const expected = ['audit_logs', 'followups', 'leads', 'meetings', 'notes', 'proposal_logs', 'users'];
+    const expected = ['activity_log', 'ai_jobs', 'audit_logs', 'followups', 'leads', 'meetings', 'notes', 'proposal_logs', 'users'];
     expected.forEach(t => {
       console.log(`  ${tables.includes(t) ? '✅' : '❌'} ${t}`);
     });
