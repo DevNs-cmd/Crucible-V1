@@ -84,10 +84,17 @@ npm test
 |--------|----------|------|-------------|
 | POST | `/api/proposals/generate` | ✅ | Enqueue AI sales proposal job (returns 202 with jobId) |
 
-### Background Jobs
+### Background Jobs (AI)
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
 | GET | `/api/jobs/:id` | ✅ | Retrieve the status and results of an AI generation job (owner or admin only) |
+
+### Automation Jobs Dashboard
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/automation/jobs` | ✅ | Paginated list of automation jobs (filter: `status`, `workflow_key`, `page`, `limit`) |
+| GET | `/api/automation/jobs/:id` | ✅ | Single automation job detail |
+| POST | `/api/automation/jobs/:id/replay` | ✅ Admin | Re-enqueue a `failed` or `dead_letter` job with same payload (creates new job ID) |
 
 ### Analytics (B4)
 | Method | Endpoint | Auth | Description |
@@ -132,6 +139,8 @@ npm test
 | `SMTP_HOST/PORT/USER/PASS` | Email config | Gmail + App Password |
 | `SMTP_FROM` | Sender name/email | e.g. `"AlgoForce AI <you@gmail.com>"` |
 | `ENABLE_CRON` | Enable cron in dev | `false` by default |
+| `REDIS_HOST` | Redis host for BullMQ + EventBroker | e.g. `localhost` (falls back to mock if unset) |
+| `REDIS_PORT` | Redis port | `6379` (default) |
 
 ---
 
@@ -140,7 +149,9 @@ npm test
 - **Services** — all business logic and Supabase queries
 - **Controllers** — thin, only parse req/res and call services
 - **Routes** — mount controllers, apply auth + rate limit middleware
-- **Automation** — fire-and-forget, never crashes the API on webhook failure
+- **Automation (Event-Driven)** — controllers publish events via `eventBroker` → `crmEventHandlers` decides which workflow to trigger → enqueues a BullMQ job → worker calls n8n → job status tracked in `automation_jobs` table
+- **Workflow Registry** — in-code map (`workflowRegistry.ts`) of workflow_key → version, so n8n workflow shape changes are a single-line bump
+- **Dead-Letter Handling** — failed jobs after all retries are marked `dead_letter` in the `automation_jobs.status` column; admins can replay via `POST /api/automation/jobs/:id/replay`
 - **Email** — 2-retry SMTP logic
-- **Cron** — only runs when `NODE_ENV=production` or `ENABLE_CRON=true`
+- **Cron** — only runs when `NODE_ENV=production` or `ENABLE_CRON=true`; follow-up reminders now routed through eventBroker
 - **Env validation** — crashes at startup if any variable is missing/wrong

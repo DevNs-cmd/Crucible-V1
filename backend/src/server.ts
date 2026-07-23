@@ -1,11 +1,12 @@
 import { initCRMEventListeners } from './domains/automation/crmEventHandlers';
 import './config/env'; // validate env at startup — crash early if invalid
 import './domains/automation/queues/aiJobs.worker';
+import './domains/automation/queues/automationJobs.worker';
 import cron from 'node-cron';
 import app from './app';
 import { env } from './config/env';
 import { getOverdueFollowUps } from './domains/crm/followups.service';
-import { triggerFollowUpReminderWebhook } from './domains/automation/automation.service';
+import { eventBroker } from './domains/automation/eventBroker';
 import { runSlaWatchdog } from './domains/automation/slaEngine';
 
 const PORT = env.PORT;
@@ -18,7 +19,7 @@ function registerCronJobs(): void {
     return;
   }
 
-  // Daily 9 AM follow-up reminder
+  // Daily 9 AM follow-up reminder — publish through eventBroker
   cron.schedule('0 9 * * *', async () => {
     console.log('[Cron] Running follow-up reminder job...');
     try {
@@ -27,8 +28,8 @@ function registerCronJobs(): void {
         console.log('[Cron] No overdue follow-ups.');
         return;
       }
-      console.log(`[Cron] ${overdue.length} overdue follow-up(s) — triggering n8n...`);
-      await triggerFollowUpReminderWebhook(overdue);
+      console.log(`[Cron] ${overdue.length} overdue follow-up(s) — publishing event...`);
+      await eventBroker.publish('followup.due', { followups: overdue });
       console.log('[Cron] Done.');
     } catch (err) {
       console.error('[Cron] Follow-up job failed:', err);

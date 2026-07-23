@@ -12,6 +12,7 @@ import webhooksRoutes from '../domains/automation/webhooks.routes';
 import activityLogRoutes from '../domains/activity-log/activityLog.routes';
 import executionRoutes from '../domains/automation/execution.routes'; 
 import jobsRoutes from '../domains/automation/jobs.routes';
+import automationJobsRoutes from '../domains/automation/automationJobs.routes';
 
 const router = Router();
 
@@ -28,5 +29,6 @@ router.use('/webhooks', webhooksRoutes);
 router.use('/activity-log', activityLogRoutes);
 router.use('/executions', executionRoutes);
 router.use('/jobs', jobsRoutes);
+router.use('/automation/jobs', automationJobsRoutes);
 
 export default router;

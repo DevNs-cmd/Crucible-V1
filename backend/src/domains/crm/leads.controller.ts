@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import * as LeadsService from '../crm/leads.service';
-import * as AutomationService from '../automation/automation.service';
 import * as ActivityLogService from '../activity-log/activityLog.service';
+import { eventBroker } from '../automation/eventBroker';
 import {
   CreateLeadSchema, UpdateLeadSchema, UpdateLeadStatusSchema, LeadFilterSchema,
 } from '../../utils/validators';
@@ -40,8 +40,8 @@ export async function createLead(req: Request, res: Response, next: NextFunction
       return;
     }
     const lead = await LeadsService.createLead(parsed.data, req.user!.userId);
-    try{
-     await AutomationService.triggerNewLeadWebhook({
+    // Publish event — crmEventHandlers decides which automation job to enqueue
+    eventBroker.publish('lead.created', {
       leadId: lead.id,
       leadName: lead.full_name,
       company: lead.company,
@@ -49,9 +49,6 @@ export async function createLead(req: Request, res: Response, next: NextFunction
       assignedTo: lead.assigned_to,
       createdAt: lead.created_at,
     });
-  } catch (webhookError){
-    console.warn('[Webhook Warning] Failed to trigger new lead webhook:', webhookError);
-  }
     sendSuccess(res, lead, 'Lead created', 201);
   } catch (err) {
     next(err);
@@ -106,7 +103,8 @@ export async function updateLeadStatus(req: Request, res: Response, next: NextFu
     const nextStatus = parsed.data.status as LeadStatus;
 
     const { lead, oldStatus } = await LeadsService.updateLeadStatus(req.params['id']!, nextStatus, req.user!.userId);
-    AutomationService.triggerStatusChangeWebhook({
+    // Publish event — crmEventHandlers decides which automation job to enqueue
+    eventBroker.publish('lead.updated', {
       leadId: lead.id,
       leadName: lead.full_name,
       company: lead.company,
