@@ -3,7 +3,16 @@ import jwt from 'jsonwebtoken';
 import { supabase } from '../../config/database';
 import { env } from '../../config/env';
 import { User, PublicUser } from '../../models/user.model';
-import { JwtPayload } from '../../middleware/auth';
+import type { JwtPayload } from '../../middleware/auth';
+import {
+  clearAuthenticationFailures,
+  issueRefreshToken,
+  recordAuthenticationFailure,
+  rotateRefreshToken,
+  revokeRefreshToken,
+  SecurityRequestContext,
+  TokenSubject,
+} from '../security/security.service';
 
 /** Sign an access token (short-lived). */
 function signAccessToken(payload: Omit<JwtPayload, 'type'>): string {
@@ -14,22 +23,14 @@ function signAccessToken(payload: Omit<JwtPayload, 'type'>): string {
   );
 }
 
-/** Sign a refresh token (long-lived). */
-function signRefreshToken(payload: Omit<JwtPayload, 'type'>): string {
-  return jwt.sign(
-    { ...payload, type: 'refresh' },
-    env.JWT_SECRET,
-    { expiresIn: env.JWT_REFRESH_EXPIRES_IN } as jwt.SignOptions
-  );
-}
-
 /**
  * Authenticate user by email/password.
  * Returns access token, refresh token, and public user.
  */
 export async function loginUser(
   email: string,
-  password: string
+  password: string,
+  context: SecurityRequestContext = {}
 ): Promise<{ accessToken: string; refreshToken: string; user: PublicUser }> {
   const { data, error } = await supabase
     .from('users')
@@ -38,53 +39,62 @@ export async function loginUser(
     .single();
 
   if (error || !data) {
+    await recordAuthenticationFailure(email, context);
     throw Object.assign(new Error('Invalid email or password'), { status: 401 });
   }
 
   const user = data as User;
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) {
+    await recordAuthenticationFailure(email, context, {
+      id: user.id,
+      organization_id: user.organization_id ?? null,
+    });
     throw Object.assign(new Error('Invalid email or password'), { status: 401 });
   }
 
-  const base: Omit<JwtPayload, 'type'> = {
+  await clearAuthenticationFailures(email, context);
+
+  const base: TokenSubject = {
     userId: user.id,
     email: user.email,
     role: user.role,
+    organizationId: user.organization_id ?? null,
   };
 
   const { password: _pw, ...publicUser } = user;
   return {
     accessToken: signAccessToken(base),
-    refreshToken: signRefreshToken(base),
+    refreshToken: await issueRefreshToken(base, context),
     user: publicUser,
   };
 }
 
 /**
- * Issue a new access token from a valid refresh token.
+ * Rotate a valid refresh token and issue a new access token.
  */
 export async function refreshAccessToken(
-  refreshToken: string
-): Promise<{ accessToken: string }> {
-  let decoded: JwtPayload;
-  try {
-    decoded = jwt.verify(refreshToken, env.JWT_SECRET) as JwtPayload;
-  } catch {
-    throw Object.assign(new Error('Invalid or expired refresh token'), { status: 401 });
-  }
-
-  if (decoded.type !== 'refresh') {
-    throw Object.assign(new Error('Invalid token type'), { status: 401 });
-  }
-
+  refreshToken: string,
+  context: SecurityRequestContext = {}
+): Promise<{ accessToken: string; refreshToken: string }> {
+  const rotated = await rotateRefreshToken(refreshToken, context);
   const accessToken = signAccessToken({
-    userId: decoded.userId,
-    email: decoded.email,
-    role: decoded.role,
+    userId: rotated.subject.userId,
+    email: rotated.subject.email,
+    role: rotated.subject.role,
+    organizationId: rotated.subject.organizationId ?? null,
   });
 
-  return { accessToken };
+  return { accessToken, refreshToken: rotated.refreshToken };
+}
+
+/** Revoke a refresh token for logout when the client provides one. */
+export async function logoutUser(refreshToken?: string, context: SecurityRequestContext = {}): Promise<void> {
+  if (!refreshToken) {
+    return;
+  }
+
+  await revokeRefreshToken(refreshToken, context);
 }
 
 /** Fetch the current user by ID (no password). */

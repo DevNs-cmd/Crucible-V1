@@ -14,6 +14,21 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('7d'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('30d'),
 
+  REDIS_URL: z.string().url().optional(),
+  REDIS_HOST: z.string().optional(),
+  REDIS_PORT: z.coerce.number().int().positive().default(6379),
+
+  SECURITY_AUTH_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(5),
+  SECURITY_AUTH_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60 * 1000),
+  SECURITY_AI_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(20),
+  SECURITY_AI_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60 * 1000),
+  SECURITY_CRM_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
+  SECURITY_CRM_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60 * 1000),
+  SECURITY_API_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
+  SECURITY_API_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(15 * 60 * 1000),
+  SECURITY_AUTH_FAILURE_MAX: z.coerce.number().int().positive().default(5),
+  SECURITY_AUTH_FAILURE_WINDOW_MS: z.coerce.number().int().positive().default(15 * 60 * 1000),
+
   GROQ_API_KEY: z.string().min(1, 'GROQ_API_KEY is required'),
 
   N8N_WEBHOOK_NEW_LEAD: z.string().url({ message: 'N8N_WEBHOOK_NEW_LEAD must be a valid URL' }),

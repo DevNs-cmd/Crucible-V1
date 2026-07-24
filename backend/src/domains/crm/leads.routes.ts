@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import * as LeadsController from './leads.controller';
 import { authenticate } from '../../middleware/auth';
+import { crmLimiter } from '../../middleware/rateLimiter';
 
 const router = Router();
 router.use(authenticate);
+router.use(crmLimiter);
 
 router.get('/', LeadsController.getLeads);
 router.post('/', LeadsController.createLead);

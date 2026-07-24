@@ -21,6 +21,11 @@ export interface LoginResponse {
   user: AuthUser;
 }
 
+interface RefreshResponse {
+  accessToken: string;
+  refreshToken: string;
+}
+
 function canUseDOM() {
   return typeof window !== "undefined" && typeof document !== "undefined";
 }
@@ -86,20 +91,21 @@ export function getCurrentUser(token: string) {
 }
 
 export async function refreshAccessToken(refreshToken: string) {
-  const data = await apiRequest<{ accessToken: string }>("/auth/refresh", {
+  const data = await apiRequest<RefreshResponse>("/auth/refresh", {
     method: "POST",
     body: { refreshToken },
   });
 
-  storeAuthTokens(data.accessToken, refreshToken);
+  storeAuthTokens(data.accessToken, data.refreshToken);
   return data.accessToken;
 }
 
-export async function logoutWithToken(token: string | null) {
+export async function logoutWithToken(token: string | null, refreshToken?: string | null) {
   try {
     await apiRequest<null>("/auth/logout", {
       method: "POST",
       token,
+      body: refreshToken ? { refreshToken } : undefined,
     });
   } catch (err) {
     if (!(err instanceof ApiRequestError)) throw err;

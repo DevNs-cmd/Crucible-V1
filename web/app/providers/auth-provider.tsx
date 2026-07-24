@@ -118,7 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    await logoutWithToken(getStoredToken());
+    await logoutWithToken(getStoredToken(), getStoredRefreshToken());
     clearSession();
   }, [clearSession]);
 

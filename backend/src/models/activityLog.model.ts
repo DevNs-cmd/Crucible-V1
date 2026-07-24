@@ -1,5 +1,13 @@
-export type EntityType = 'lead' | 'note' | 'meeting' | 'followup' | 'user' | 'automation';
-export type ActivityAction = 'create' | 'update' | 'delete' | 'status_change' | 'automation_trigger' | 'automation_complete' | 'automation_fail';
+export type EntityType = 'lead' | 'note' | 'meeting' | 'followup' | 'user' | 'automation' | 'security';
+export type ActivityAction =
+  | 'create'
+  | 'update'
+  | 'delete'
+  | 'status_change'
+  | 'automation_trigger'
+  | 'automation_complete'
+  | 'automation_fail'
+  | 'security_alert';
 
 export interface ActivityLog {
   id: string;

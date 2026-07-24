@@ -44,7 +44,7 @@ export const LeadFilterSchema = z.object({
 
 // ─── Activity Log ─────────────────────────────────────────────────────────────
 
-export const EntityTypeEnum = z.enum(['lead', 'note', 'meeting', 'followup', 'user']);
+export const EntityTypeEnum = z.enum(['lead', 'note', 'meeting', 'followup', 'user', 'automation', 'security']);
 
 export const ActivityLogFilterSchema = z.object({
   entity_type: EntityTypeEnum.optional(),

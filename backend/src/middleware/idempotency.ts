@@ -1,16 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import Redis from 'ioredis';
-
-let redis: any;
-
-// Fallback safely to redis-mock if no local Redis server is running
-if (process.env.NODE_ENV === 'development' && !process.env.REDIS_URL) {
-  console.log('[Idempotency] No external Redis server detected. Initializing local in-memory mock cache...');
-  const RedisMock = require('redis-mock');
-  redis = RedisMock.createClient();
-} else {
-  redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
-}
+import { redisDel, redisExpire, redisGet, redisSet } from '../config/redis';
 
 const IDEMPOTENCY_TTL = 5 * 60; // 5 minutes cache window
 
@@ -30,14 +19,7 @@ export async function idempotencyMiddleware(req: Request, res: Response, next: N
   const responseKey = `idempotency:response:${idempotencyKey}`;
 
   try {
-    // In-memory mock clients use callbacks, so we wrap them cleanly in promises
-    const getLock = (): Promise<string | null> => 
-      new Promise((resolve) => redis.get(lockKey, (_err: any, reply: any) => resolve(reply)));
-
-    const getResponse = (): Promise<string | null> => 
-      new Promise((resolve) => redis.get(responseKey, (_err: any, reply: any) => resolve(reply)));
-
-    const cachedResponse = await getResponse();
+    const cachedResponse = await redisGet(responseKey);
     if (cachedResponse) {
       const parsed = JSON.parse(cachedResponse);
       console.log(`[Idempotency] Serving cached response for key: ${idempotencyKey}`);
@@ -45,7 +27,7 @@ export async function idempotencyMiddleware(req: Request, res: Response, next: N
       return;
     }
 
-    const currentLock = await getLock();
+    const currentLock = await redisGet(lockKey);
     if (currentLock === 'IN_PROGRESS') {
       res.status(409).json({
         error: 'Conflict',
@@ -55,8 +37,8 @@ export async function idempotencyMiddleware(req: Request, res: Response, next: N
     }
 
     // Set lock flag
-    redis.set(lockKey, 'IN_PROGRESS');
-    redis.expire(lockKey, 30);
+    await redisSet(lockKey, 'IN_PROGRESS');
+    await redisExpire(lockKey, 30);
 
     const originalJson = res.json;
     res.json = function (body: any): Response {
@@ -67,9 +49,10 @@ export async function idempotencyMiddleware(req: Request, res: Response, next: N
         body: body
       };
       
-      redis.set(responseKey, JSON.stringify(cachePayload));
-      redis.expire(responseKey, IDEMPOTENCY_TTL);
-      redis.del(lockKey);
+      redisSet(responseKey, JSON.stringify(cachePayload))
+        .then(() => redisExpire(responseKey, IDEMPOTENCY_TTL))
+        .then(() => redisDel(lockKey))
+        .catch((err) => console.error('[Idempotency] Cache write failed:', err));
 
       return res.json(body);
     };
